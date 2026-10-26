@@ -1,12 +1,16 @@
 /**
  * Kelly Wilburn
  * CEN 3024 - Software Development 1
- * Date: October 17, 2026
- * Class: IMS
- * Purpose: Manages the inventory collection and its operations, including:
- * adding, importing, searching, modifying, removing, sorting, and calculating
- * the value of product records.
+ * October 17, 2026
+ * IMS.java
+ *
+ * This class manages the inventory collection for the Inventory Management
+ * System. It supports adding, importing, searching, modifying, removing,
+ * sorting, and displaying products, as well as calculating total inventory
+ * value. Duplicate product IDs and product names are rejected, with product
+ * names compared without regard to capitalization.
  */
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
@@ -21,62 +25,87 @@ public class IMS {
     private boolean lastFileEmpty;
 
     /**
-     * Method: IMS
-     * Purpose: Initializes a new instance of this class.
-     * Arguments: none.
-     * Returns: none (void method).
+     * Initializes an empty inventory and resets file-import status.
+     * Constructor parameters: none.
+     * Return: none.
      */
     public IMS() {
-
-        products =
-                new ArrayList<>();
+        products = new ArrayList<>();
         lastSkippedLineCount = 0;
         lastFileEmpty = false;
     }
 
     /**
      * Method: addProduct
-     * Purpose: Adds a product to inventory unless the input is null or its identifier already exists.
-     * Arguments: product.
-     * Returns: boolean.
+     * Purpose: Adds a product only when its ID and name are unique.
+     * Parameters: product - the Product object to add.
+     * Return: boolean - true if added; false if null or a duplicate.
      */
-    public boolean addProduct(
-            Product product) {
+    public boolean addProduct(Product product) {
 
         if (product == null) {
-
             return false;
         }
 
-        Product existingProduct =
-                findProduct(
-                        product.getProductId());
+        if (findProduct(product.getProductId()) != null) {
+            return false;
+        }
 
-        if (existingProduct != null) {
-
+        if (containsProductName(product.getProductName())) {
             return false;
         }
 
         products.add(product);
-
         return true;
     }
 
     /**
+     * Method: containsProductName
+     * Purpose: Determines whether a product name already exists in inventory,
+     * ignoring capitalization.
+     * Parameters: productName - the name to search for.
+     * Return: boolean - true if the name exists; otherwise false.
+     */
+    public boolean containsProductName(String productName) {
+
+        if (productName == null) {
+            return false;
+        }
+
+        for (Product product : products) {
+            if (product.getProductName().equalsIgnoreCase(productName.trim())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Method: loadProducts
-     * Purpose: Reads product records from a text file, adds valid records, and tracks skipped entries.
-     * Arguments: filePath.
-     * Returns: int.
+     * Purpose: Reads product records from a text file, validates each record,
+     * adds valid unique products, and tracks invalid or duplicate entries.
+     * Parameters: filePath - the path to the text file.
+     * Return: int - number of products added, or -1 if the file cannot be opened.
      */
     public int loadProducts(String filePath) {
+
         int addedCount = 0;
         int skippedCount = 0;
         boolean foundEntry = false;
+
         lastSkippedLineCount = 0;
         lastFileEmpty = false;
 
+        if (filePath == null
+                || !filePath.toLowerCase().endsWith(".txt")) {
+            return -1;
+        }
+
         try (Scanner fileScanner = new Scanner(new File(filePath))) {
+
             while (fileScanner.hasNextLine()) {
+
                 String line = fileScanner.nextLine();
 
                 if (line.trim().isEmpty()) {
@@ -84,6 +113,7 @@ public class IMS {
                 }
 
                 foundEntry = true;
+
                 Product product = createProductFromLine(line);
 
                 if (product == null) {
@@ -94,20 +124,23 @@ public class IMS {
                     skippedCount++;
                 }
             }
+
         } catch (FileNotFoundException exception) {
             return -1;
         }
 
         lastSkippedLineCount = skippedCount;
         lastFileEmpty = !foundEntry;
+
         return addedCount;
     }
 
     /**
      * Method: getLastSkippedLineCount
-     * Purpose: Returns the number of invalid or duplicate non-empty file entries skipped during the last import.
-     * Arguments: none.
-     * Returns: int.
+     * Purpose: Returns the number of invalid or duplicate file entries skipped
+     * during the most recent import.
+     * Parameters: none.
+     * Return: int - the number of skipped entries.
      */
     public int getLastSkippedLineCount() {
         return lastSkippedLineCount;
@@ -115,9 +148,10 @@ public class IMS {
 
     /**
      * Method: wasLastFileEmpty
-     * Purpose: Reports whether the most recently processed file contained no non-empty entries.
-     * Arguments: none.
-     * Returns: boolean.
+     * Purpose: Reports whether the most recently imported file contained
+     * any non-empty lines.
+     * Parameters: none.
+     * Return: boolean - true if no non-empty lines were found.
      */
     public boolean wasLastFileEmpty() {
         return lastFileEmpty;
@@ -125,120 +159,86 @@ public class IMS {
 
     /**
      * Method: createProductFromLine
-     * Purpose: Parses and validates one file line, returning a Product or null when the line is invalid.
-     * Arguments: line.
-     * Returns: Product.
+     * Purpose: Parses and validates one text-file record before creating
+     * a Product object.
+     * Parameters: line - a record containing six hyphen-separated fields.
+     * Return: Product - the validated product, or null if the record is invalid.
      */
-    private Product createProductFromLine(
-            String line) {
+    private Product createProductFromLine(String line) {
 
-        ProductValidator validator =
-                new ProductValidator();
+        ProductValidator validator = new ProductValidator();
 
-        String[] productParts =
-                line.split("-", -1);
+        String[] productParts = line.split("-", -1);
 
         if (productParts.length != 6) {
-
             return null;
         }
 
-        String productId =
-                productParts[0].trim();
+        String productId = productParts[0].trim();
+        String productName = productParts[1].trim();
+        String category = productParts[2].trim();
+        String supplier = productParts[3].trim();
+        String quantityText = productParts[4].trim();
+        String priceText = productParts[5].trim();
 
-        String productName =
-                productParts[1].trim();
-
-        String category =
-                productParts[2].trim();
-
-        String supplier =
-                productParts[3].trim();
-
-        String quantityText =
-                productParts[4].trim();
-
-        String priceText =
-                productParts[5].trim();
-
-        if (!validator.isValidProductId(productId)) {
-
-            return null;
-        }
-
-        if (!validator.isValidText(productName)) {
-
-            return null;
-        }
-
-        if (!validator.isValidCategory(category)) {
-
-            return null;
-        }
-
-        if (!validator.isValidSupplier(supplier)) {
-
+        if (!validator.isValidProductId(productId)
+                || !validator.isValidText(productName)
+                || !validator.isValidCategory(category)
+                || !validator.isValidSupplier(supplier)) {
             return null;
         }
 
         int unitQuantity;
 
         try {
-
-            unitQuantity =
-                    Integer.parseInt(quantityText);
-
+            unitQuantity = Integer.parseInt(quantityText);
         } catch (NumberFormatException exception) {
-
             return null;
         }
 
-        if (!validator.isValidQuantity(
-                unitQuantity)) {
-
+        if (!validator.isValidQuantity(unitQuantity)) {
             return null;
         }
 
         BigDecimal unitPrice;
 
         try {
-
-            unitPrice =
-                    new BigDecimal(priceText);
-
+            unitPrice = new BigDecimal(priceText);
         } catch (NumberFormatException exception) {
-
             return null;
         }
 
         if (!validator.isValidPrice(unitPrice)) {
-
             return null;
         }
 
-        return new Product(
-                productId,
-                productName,
-                category,
-                supplier,
-                unitQuantity,
-                unitPrice);
+        try {
+            return new Product(
+                    productId,
+                    productName,
+                    category,
+                    supplier,
+                    unitQuantity,
+                    unitPrice);
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
     }
 
     /**
      * Method: findProduct
-     * Purpose: Finds and returns the product with the requested identifier, or null if no match exists.
-     * Arguments: productId.
-     * Returns: Product.
+     * Purpose: Finds a product by its exact product ID.
+     * Parameters: productId - the ID to search for.
+     * Return: Product - the matching product, or null if not found.
      */
-    public Product findProduct(
-            String productId) {
+    public Product findProduct(String productId) {
+
+        if (productId == null) {
+            return null;
+        }
 
         for (Product product : products) {
-
-            if (product.getProductId()
-                    .equals(productId)) {
-
+            if (product.getProductId().equals(productId)) {
                 return product;
             }
         }
@@ -248,18 +248,15 @@ public class IMS {
 
     /**
      * Method: removeProduct
-     * Purpose: Removes the product with the supplied identifier and reports whether the removal succeeded.
-     * Arguments: productId.
-     * Returns: boolean.
+     * Purpose: Removes a product from inventory using its product ID.
+     * Parameters: productId - the ID of the product to remove.
+     * Return: boolean - true if removed; otherwise false.
      */
-    public boolean removeProduct(
-            String productId) {
+    public boolean removeProduct(String productId) {
 
-        Product product =
-                findProduct(productId);
+        Product product = findProduct(productId);
 
         if (product != null) {
-
             return products.remove(product);
         }
 
@@ -268,9 +265,16 @@ public class IMS {
 
     /**
      * Method: modifyProduct
-     * Purpose: Updates the fields modified of an existing product and reports whether it was found.
-     * Arguments: productId, productName, category, supplier, unitQuantity, unitPrice.
-     * Returns: boolean.
+     * Purpose: Updates an existing product's details while preventing its
+     * name from duplicating another product's name, ignoring capitalization.
+     * Parameters: productId - ID of the product to modify;
+     * productName - updated name;
+     * category - updated category;
+     * supplier - updated supplier;
+     * unitQuantity - updated quantity;
+     * unitPrice - updated unit price.
+     * Return: boolean - true if updated; false if the product does not exist
+     * or its proposed name duplicates another product.
      */
     public boolean modifyProduct(
             String productId,
@@ -280,38 +284,48 @@ public class IMS {
             int unitQuantity,
             BigDecimal unitPrice) {
 
-        Product product =
-                findProduct(productId);
+        Product product = findProduct(productId);
 
-        if (product == null) {
-
+        if (product == null || productName == null) {
             return false;
         }
 
-        product.setProductName(productName);
+        String trimmedName = productName.trim();
 
-        product.setCategory(category);
+        for (Product existingProduct : products) {
 
-        product.setSupplier(supplier);
+            if (existingProduct != product
+                    && existingProduct.getProductName()
+                    .equalsIgnoreCase(trimmedName)) {
 
-        product.setUnitQuantity(unitQuantity);
+                return false;
+            }
+        }
 
-        product.setUnitPrice(unitPrice);
+        try {
+            product.setProductName(trimmedName);
+            product.setCategory(category);
+            product.setSupplier(supplier);
+            product.setUnitQuantity(unitQuantity);
+            product.setUnitPrice(unitPrice);
 
-        return true;
+            return true;
+
+        } catch (IllegalArgumentException exception) {
+            return false;
+        }
     }
 
     /**
      * Method: getProductsAlphabetically
-     * Purpose: Returns a copy of the inventory products sorted alphabetically by product name.
-     * Arguments: none.
-     * Returns: ArrayList<Product>.
+     * Purpose: Returns a copy of the inventory sorted by product name.
+     * Parameters: none.
+     * Return: ArrayList<Product> - products sorted alphabetically,
+     * ignoring capitalization.
      */
-    public ArrayList<Product>
-    getProductsAlphabetically() {
+    public ArrayList<Product> getProductsAlphabetically() {
 
-        ArrayList<Product> sortedProducts =
-                new ArrayList<>(products);
+        ArrayList<Product> sortedProducts = new ArrayList<>(products);
 
         sortedProducts.sort(
                 Comparator.comparing(
@@ -323,22 +337,19 @@ public class IMS {
 
     /**
      * Method: getProductsDisplay
-     * Purpose: Builds and returns a formatted display of all inventory products.
-     * Arguments: none.
-     * Returns: String.
+     * Purpose: Creates a formatted listing of all products in inventory.
+     * Parameters: none.
+     * Return: String - formatted inventory information or an empty-inventory message.
      */
     public String getProductsDisplay() {
 
-        ArrayList<Product> sortedProducts =
-                getProductsAlphabetically();
+        ArrayList<Product> sortedProducts = getProductsAlphabetically();
 
         if (sortedProducts.isEmpty()) {
-
             return "There are currently no items in inventory.";
         }
 
-        StringBuilder output =
-                new StringBuilder();
+        StringBuilder output = new StringBuilder();
 
         int itemNumber = 1;
 
@@ -349,8 +360,7 @@ public class IMS {
                     .append(". ")
                     .append(product.getProductName())
                     .append("  ")
-                    .append(formatCurrency(
-                            product.getUnitPrice()))
+                    .append(formatCurrency(product.getUnitPrice()))
                     .append("\n");
 
             output.append("    ")
@@ -377,26 +387,21 @@ public class IMS {
 
     /**
      * Method: getTotalInventoryValue
-     * Purpose: Calculates and returns the combined value of all quantities at their unit prices.
-     * Arguments: none.
-     * Returns: BigDecimal.
+     * Purpose: Calculates the total value of all inventory quantities
+     * multiplied by their corresponding unit prices.
+     * Parameters: none.
+     * Return: BigDecimal - the total inventory value.
      */
     public BigDecimal getTotalInventoryValue() {
 
-        BigDecimal totalInventoryValue =
-                BigDecimal.ZERO;
+        BigDecimal totalInventoryValue = BigDecimal.ZERO;
 
         for (Product product : products) {
 
-            BigDecimal productValue =
-                    product.getUnitPrice()
-                            .multiply(
-                                    BigDecimal.valueOf(
-                                            product.getUnitQuantity()));
+            BigDecimal productValue = product.getUnitPrice()
+                    .multiply(BigDecimal.valueOf(product.getUnitQuantity()));
 
-            totalInventoryValue =
-                    totalInventoryValue.add(
-                            productValue);
+            totalInventoryValue = totalInventoryValue.add(productValue);
         }
 
         return totalInventoryValue;
@@ -404,23 +409,21 @@ public class IMS {
 
     /**
      * Method: getProductCount
-     * Purpose: Returns the number of products currently in inventory.
-     * Arguments: none.
-     * Returns: int.
+     * Purpose: Returns the number of products currently stored in inventory.
+     * Parameters: none.
+     * Return: int - the number of products.
      */
     public int getProductCount() {
-
         return products.size();
     }
 
     /**
      * Method: formatCurrency
-     * Purpose: Formats a decimal amount as a dollar string with two decimal places.
-     * Arguments: amount.
-     * Returns: String.
+     * Purpose: Formats a monetary amount with a dollar sign and two decimal places.
+     * Parameters: amount - the monetary amount to format.
+     * Return: String - the formatted currency value.
      */
-    private String formatCurrency(
-            BigDecimal amount) {
+    private String formatCurrency(BigDecimal amount) {
 
         return "$"
                 + amount.setScale(2)
