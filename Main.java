@@ -248,7 +248,10 @@ public class Main {
                 .findProduct(productId) != null) {
 
             System.out.println(
-                    "That product ID already exists.");
+                    "Item has already been added to the list.");
+
+            System.out.println(
+                    "Select option '5. Modify Item' to update quantity or price listing.");
 
             return false;
         }
@@ -296,6 +299,9 @@ public class Main {
 
             } else {
 
+                System.out.println();
+                System.out.println(
+                        "Item has already been added to the list.");
                 System.out.println(
                         "Item could not be added.");
             }
@@ -344,9 +350,24 @@ public class Main {
         if (filePath.isEmpty()) {
 
             System.out.println(
-                    "File path cannot be empty.");
+                    "The file could not be opened.");
 
-            return 0;
+            System.out.println(
+                    "Please check that the file type is a text file");
+
+            return -1;
+        }
+
+        // Reject files that do not have a .txt extension.
+        if (!filePath.matches("(?s).*\\.txt")) {
+
+            System.out.println(
+                    "The file could not be opened.");
+
+            System.out.println(
+                    "Please check that the file type is a text file");
+
+            return -1;
         }
 
         int addedCount =
@@ -359,7 +380,7 @@ public class Main {
                     "The file could not be opened.");
 
             System.out.println(
-                    "Please check that the file path "
+                    "Please check that the file PATH and file TYPE are correct."
                             + "is correct.");
 
         } else if (inventoryManagementSystem.wasLastFileEmpty()) {
@@ -489,7 +510,8 @@ public class Main {
 
     /**
      * Method: modifyProduct
-     * Purpose: Updates the updated fields of an existing product and reports if it was found.
+     * Purpose: Updates an existing product while preventing duplicate product
+     * names regardless of capitalization.
      * Arguments: inventoryManagementSystem, scanner.
      * Returns: boolean.
      */
@@ -497,88 +519,75 @@ public class Main {
             IMS inventoryManagementSystem,
             Scanner scanner) {
 
-        System.out.println(
-                "\n========== Modify Item ==========");
+        System.out.println("\n========== Modify Item ==========");
 
-        String productId =
-                getProductId(scanner);
+        String productId = getProductId(scanner);
 
         Product product =
-                inventoryManagementSystem
-                        .findProduct(productId);
+                inventoryManagementSystem.findProduct(productId);
 
         if (product == null) {
-
             System.out.println(
                     "No product was found with that ID.");
-
             return false;
         }
 
-        System.out.println(
-                "\nCurrent information:");
-
-        System.out.println(
-                displaySingleProduct(product));
+        System.out.println("\nCurrent information:");
+        System.out.println(displaySingleProduct(product));
 
         System.out.println(
                 "\nPress Enter to keep the current value.");
 
         System.out.print(
-                "Product name ["
-                        + product.getProductName()
-                        + "]: ");
+                "Product name [" + product.getProductName() + "]: ");
 
-        String productName =
-                scanner.nextLine().trim();
+        String productName = scanner.nextLine().trim();
 
         if (productName.isEmpty()) {
+            productName = product.getProductName();
+        }
 
-            productName =
-                    product.getProductName();
+        // Reject a name already used by another item,
+        // regardless of capitalization.
+        if (!productName.equalsIgnoreCase(product.getProductName())
+                && inventoryManagementSystem.containsProductName(productName)) {
+
+            System.out.println(
+                    "Item has already been added to the list.");
+
+            System.out.println(
+                    "Select option '5. Modify Item' to update quantity or price listing.");
+
+            return false;
         }
 
         String category =
-                getModifiedCategory(
-                        scanner,
-                        product.getCategory());
+                getModifiedCategory(scanner, product.getCategory());
 
         String supplier =
-                getModifiedSupplier(
-                        scanner,
-                        product.getSupplier());
+                getModifiedSupplier(scanner, product.getSupplier());
 
         int unitQuantity =
-                getModifiedQuantity(
-                        scanner,
-                        product.getUnitQuantity());
+                getModifiedQuantity(scanner, product.getUnitQuantity());
 
         BigDecimal unitPrice =
-                getModifiedPrice(
-                        scanner,
-                        product.getUnitPrice());
+                getModifiedPrice(scanner, product.getUnitPrice());
 
         try {
 
             boolean modified =
-                    inventoryManagementSystem
-                            .modifyProduct(
-                                    productId,
-                                    productName,
-                                    category,
-                                    supplier,
-                                    unitQuantity,
-                                    unitPrice);
+                    inventoryManagementSystem.modifyProduct(
+                            productId,
+                            productName,
+                            category,
+                            supplier,
+                            unitQuantity,
+                            unitPrice);
 
             if (modified) {
-
-                System.out.println(
-                        "Product successfully updated.");
-
+                System.out.println("Product successfully updated.");
             } else {
-
-                System.out.println(
-                        "Product could not be changed.");
+                System.out.println("Product could not be changed.");
             }
 
             return modified;
@@ -586,8 +595,7 @@ public class Main {
         } catch (IllegalArgumentException exception) {
 
             System.out.println(
-                    "Invalid information: "
-                            + exception.getMessage());
+                    "Invalid information: " + exception.getMessage());
 
             return false;
         }
