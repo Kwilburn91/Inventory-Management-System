@@ -3,28 +3,27 @@
  * CEN 3024 - Software Development 1
  * Date: October 17, 2026
  * Class: Main
- * Purpose: Runs the Inventory Management System application. It presents the menu,
- * accepts and validates user input, and coordinates inventory operations so users can:
- * add, import, search, modify, remove, display products, and display total value of
- * inventory or exit the program.
+ * Purpose: Launches the graphical Inventory Management System through the
+ * application entry point. The run() method is retained for the original
+ * console interface and its existing tests.
  */
 import java.math.BigDecimal;
 import java.util.Scanner;
+import javax.swing.SwingUtilities;
 
 public class Main {
 
     /**
      * Method: main
-     * Purpose: Starts the application by creating the Main object and invoking its run method.
-     * Arguments: args.
+     * Purpose: Launches the graphical Inventory Management System
+     * on the Swing event-dispatch thread.
+     * Arguments: args - command-line arguments (not used).
      * Returns: none (void method).
      */
     public static void main(String[] args) {
 
-        Main application =
-                new Main();
-
-        application.run();
+        SwingUtilities.invokeLater(
+                () -> new GUI());
     }
 
     /**
