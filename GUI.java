@@ -1,24 +1,16 @@
 /**
  * Kelly Wilburn
  * CEN 3024 - Software Development 1
- * November 1, 2026
- * GUI.java
- *
- * This class provides the graphical user interface for the Inventory Management System.
- * It allows users to:
- * - add products
- * - import products from text files
- * - search for products
- * - modify existing products
- * - remove products, display inventory
- * - calculate total inventory value
- * - exit the system
- * It communicates with the IMS, Product, and ProductValidator classes to perform inventory operations and validate user input.
+ * November 8, 2026
+ * Class: GUI
+ * Purpose: Provides the graphical interface for the Inventory Management System.
+ * Users can add, import, search, modify, and remove products, view all inventory
+ * records in a selectable table, and calculate the total value of the inventory.
+ * Inventory operations and validation are performed by the existing IMS,
+ * Product, and ProductValidator classes.
  */
 
 import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -26,1321 +18,749 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
+import javax.swing.JTable;
 import javax.swing.JTextField;
-import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.GridLayout;
 import java.io.File;
 import java.math.BigDecimal;
 
 public class GUI extends JFrame {
 
-    private final IMS inventoryManagementSystem;
+    private static final long serialVersionUID = 1L;
 
+    private final IMS inventoryManagementSystem;
     private final ProductValidator validator;
 
-    private JTextArea outputArea;
-
     private JTextField productIdField;
-
     private JTextField productNameField;
-
     private JTextField categoryField;
-
     private JTextField supplierField;
-
     private JTextField quantityField;
-
     private JTextField priceField;
-
     private JTextField filePathField;
+
+    private JTable productTable;
+    private DefaultTableModel tableModel;
+    private JLabel countLabel;
+    private JLabel statusLabel;
 
     /**
      * Method: GUI
-     * Purpose: Initializes the inventory management system and configures the main application window. Creates the GUI components, displays the welcome message, and makes the window visible.
+     * Purpose: Initializes the inventory and creates the application window.
      * Parameters: none.
-     * Return: void.
+     * Return: none (constructor).
      */
     public GUI() {
+        inventoryManagementSystem = new IMS();
+        validator = new ProductValidator();
 
-        inventoryManagementSystem =
-                new IMS();
-
-        validator =
-                new ProductValidator();
-
-        setTitle(
-                "IMS - Inventory Management System");
-
-        setDefaultCloseOperation(
-                JFrame.EXIT_ON_CLOSE);
-
-        setSize(
-                900,
-                650);
-
+        setTitle("IMS - Inventory Management System");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setMinimumSize(new Dimension(1050, 600));
+        setMaximumSize(new Dimension(1600, 740));
+        setSize(1080, 650);
         setLocationRelativeTo(null);
 
         createGUI();
-
-        displayWelcomeMessage();
-
+        refreshTable();
         setVisible(true);
     }
 
     /**
      * Method: createGUI
-     * Purpose: Creates and organizes the main GUI components, including the application title, operation buttons, and scrollable output area.
+     * Purpose: Builds the header, product-entry panel, file-import bar, inventory
+     * table, operation controls, and status bar.
      * Parameters: none.
      * Return: void.
      */
     private void createGUI() {
+        JPanel mainPanel = new JPanel(new BorderLayout(12, 12));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(12, 12, 8, 12));
 
-        JPanel mainPanel =
-                new JPanel(
-                        new BorderLayout(
-                                10,
-                                10));
-
-        mainPanel.setBorder(
-                BorderFactory.createEmptyBorder(
-                        10,
-                        10,
-                        10,
-                        10));
-
-        JLabel titleLabel =
-                new JLabel(
-                        "IMS - Inventory Management System",
-                        SwingConstants.CENTER);
-
-        titleLabel.setFont(
-                new Font(
-                        "Arial",
-                        Font.BOLD,
-                        24));
-
-        mainPanel.add(
-                titleLabel,
-                BorderLayout.NORTH);
-
-        JPanel operationsPanel =
-                createOperationsPanel();
-
-        mainPanel.add(
-                operationsPanel,
-                BorderLayout.WEST);
-
-        outputArea =
-                new JTextArea();
-
-        outputArea.setEditable(false);
-
-        outputArea.setFont(
-                new Font(
-                        "Monospaced",
-                        Font.PLAIN,
-                        14));
-
-        outputArea.setLineWrap(true);
-
-        outputArea.setWrapStyleWord(true);
-
-        JScrollPane outputScrollPane =
-                new JScrollPane(
-                        outputArea);
-
-        outputScrollPane.setBorder(
-                BorderFactory.createTitledBorder(
-                        ""));
-
-        mainPanel.add(
-                outputScrollPane,
-                BorderLayout.CENTER);
+        mainPanel.add(createHeader(), BorderLayout.NORTH);
+        mainPanel.add(createDetailsPanel(), BorderLayout.WEST);
+        mainPanel.add(createInventoryPanel(), BorderLayout.CENTER);
+        mainPanel.add(createStatusBar(), BorderLayout.SOUTH);
 
         setContentPane(mainPanel);
     }
 
     /**
-     * Method: createOperationsPanel
-     * Purpose: Creates the vertical panel containing buttons for all available inventory operations.
+     * Method: createHeader
+     * Purpose: Creates the application title and live inventory record count.
      * Parameters: none.
-     * Return: JPanel - the completed operations panel.
+     * Return: JPanel - the header panel.
      */
-    private JPanel createOperationsPanel() {
+    private JPanel createHeader() {
+        // Paint a left-to-right gradient from white to the requested light blue.
+        JPanel header = new JPanel(new BorderLayout(10, 4)) {
+            private static final long serialVersionUID = 1L;
 
-        JPanel panel =
-                new JPanel();
+            @Override
+            protected void paintComponent(Graphics graphics) {
+                super.paintComponent(graphics);
+                Graphics2D g2 = (Graphics2D) graphics.create();
+                g2.setPaint(new GradientPaint(
+                        0, 0, Color.WHITE,
+                        getWidth(), 0, new Color(203, 224, 242)));
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.dispose();
+            }
+        };
+        header.setBorder(BorderFactory.createEmptyBorder(10, 12, 12, 12));
+        header.setOpaque(false);
 
-        panel.setLayout(
-                new BoxLayout(
-                        panel,
-                        BoxLayout.Y_AXIS));
+        JLabel title = new JLabel("IMS - Inventory Management System");
+        title.setFont(new Font("Arial", Font.BOLD, 25));
+        title.setForeground(new Color(25, 45, 75));
+        countLabel = new JLabel("Products: 0", SwingConstants.RIGHT);
+        countLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        countLabel.setForeground(new Color(25, 45, 75));
 
-        panel.setBorder(
-                BorderFactory.createTitledBorder(
-                        "Menu"));
+        header.add(title, BorderLayout.WEST);
+        header.add(countLabel, BorderLayout.EAST);
+        return header;
+    }
 
-        JButton addButton =
-                new JButton(
-                        "Add Item");
+    /**
+     * Method: createDetailsPanel
+     * Purpose: Creates the editable product form and its Add, Update, Search,
+     * and Clear controls.
+     * Parameters: none.
+     * Return: JPanel - the product details panel.
+     */
+    private JPanel createDetailsPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Product Details"),
+                BorderFactory.createEmptyBorder(8, 8, 8, 8)));
+        panel.setPreferredSize(new Dimension(315, 0));
 
-        JButton loadButton =
-                new JButton(
-                        "Load From File");
+        productIdField = new JTextField(18);
+        productNameField = new JTextField(18);
+        categoryField = new JTextField(18);
+        supplierField = new JTextField(18);
+        quantityField = new JTextField(18);
+        priceField = new JTextField(18);
 
-        JButton removeButton =
-                new JButton(
-                        "Remove Item");
+        addFormRow(panel, 0, "Product ID (7 digits)", productIdField);
+        addFormRow(panel, 1, "Product Name", productNameField);
+        addFormRow(panel, 2, "Category", categoryField);
+        addFormRow(panel, 3, "Supplier", supplierField);
+        addFormRow(panel, 4, "Quantity", quantityField);
+        addFormRow(panel, 5, "Unit Price ($)", priceField);
 
-        JButton searchButton =
-                new JButton(
-                        "Search Item");
+        JButton addButton = new JButton("Add");
+        JButton updateButton = new JButton("Update");
+        JButton searchButton = new JButton("Search");
+        JButton clearButton = new JButton("Clear");
 
-        JButton modifyButton =
-                new JButton(
-                        "Modify Item");
+        addButton.addActionListener(event -> addProduct());
+        updateButton.addActionListener(event -> modifyProduct());
+        searchButton.addActionListener(event -> searchProduct());
+        clearButton.addActionListener(event -> clearForm());
+        productIdField.addActionListener(event -> searchProduct());
 
-        JButton viewButton =
-                new JButton(
-                        "Display All Items");
+        // Stack the four form controls vertically in a single column.
+        JPanel buttons = new JPanel(new GridLayout(2, 2, 10, 12));
+        JButton[] controls = {addButton, updateButton, searchButton, clearButton};
+        for (JButton control : controls) {
+            buttons.add(control);
+        }
 
-        JButton valueButton =
-                new JButton(
-                        "Inventory Value");
+        GridBagConstraints c = new GridBagConstraints();
+        c.gridx = 0;
+        c.gridy = 12;
+        c.gridwidth = 2;
+        c.weightx = 1;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.insets = new Insets(12, 2, 2, 2);
+        panel.add(buttons, c);
 
-        JButton clearButton =
-                new JButton(
-                        "Clear Output");
-
-        JButton exitButton =
-                new JButton(
-                        "Exit");
-
-        addButton.addActionListener(
-                event -> addProduct());
-
-        loadButton.addActionListener(
-                event -> loadProducts());
-
-        removeButton.addActionListener(
-                event -> removeProduct());
-
-        searchButton.addActionListener(
-                event -> searchProduct());
-
-        modifyButton.addActionListener(
-                event -> modifyProduct());
-
-        viewButton.addActionListener(
-                event -> viewProducts());
-
-        valueButton.addActionListener(
-                event -> viewInventoryValue());
-
-        clearButton.addActionListener(
-                event -> outputArea.setText(""));
-
-        exitButton.addActionListener(
-                event -> exitProgram());
-
-        addButtonToPanel(panel, addButton);
-
-        addButtonToPanel(panel, loadButton);
-
-        addButtonToPanel(panel, removeButton);
-
-        addButtonToPanel(panel, searchButton);
-
-        addButtonToPanel(panel, modifyButton);
-
-        addButtonToPanel(panel, viewButton);
-
-        addButtonToPanel(panel, valueButton);
-
-        addButtonToPanel(panel, clearButton);
-
-        addButtonToPanel(panel, exitButton);
-
+        c.gridy = 13;
+        c.weighty = 1;
+        c.fill = GridBagConstraints.BOTH;
+        panel.add(new JPanel(), c);
         return panel;
     }
 
     /**
-     * Method: addButtonToPanel
-     * Purpose: Adds an operation button to the operations panel, centers it horizontally, sets its maximum dimensions, and adds spacing between buttons.
-     * Parameters: panel - the JPanel containing the operation buttons.
-     * button - the JButton being added.
+     * Method: addFormRow
+     * Purpose: Places one descriptive label and text field into the product form.
+     * Parameters: panel - destination panel; row - grid row; labelText - field label;
+     * field - text field accepting the value.
      * Return: void.
      */
-    private void addButtonToPanel(
-            JPanel panel,
-            JButton button) {
+    private void addFormRow(JPanel panel, int row, String labelText, JTextField field) {
+        GridBagConstraints c = new GridBagConstraints();
+        c.gridx = 0;
+        c.gridy = row * 2;
+        c.gridwidth = 2;
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.insets = new Insets(7, 2, 2, 2);
+        JLabel label = new JLabel(labelText);
+        label.setFont(label.getFont().deriveFont(Font.BOLD, 13f));
+        panel.add(label, c);
 
-        button.setAlignmentX(
-                Component.CENTER_ALIGNMENT);
-
-        button.setMaximumSize(
-                new Dimension(
-                        180,
-                        40));
-
-        panel.add(button);
-
-        panel.add(
-                Box.createVerticalStrut(8));
+        c.gridy = row * 2 + 1;
+        c.insets = new Insets(0, 2, 3, 2);
+        panel.add(field, c);
     }
 
     /**
-     * Method: displayWelcomeMessage
-     * Purpose: Displays the application title and initial instructions in the GUI output area.
+     * Method: createInventoryPanel
+     * Purpose: Creates the file-import controls, selectable inventory table,
+     * and bottom actions for removal, value calculation, and exit.
      * Parameters: none.
-     * Return: void.
+     * Return: JPanel - the inventory panel.
      */
-    private void displayWelcomeMessage() {
+    private JPanel createInventoryPanel() {
+        JPanel panel = new JPanel(new BorderLayout(8, 10));
 
-        appendOutput(
-                "================================================");
-        appendOutput(
-                "   Welcome To The Inventory Management System");
-        appendOutput(
-                "================================================");
-        appendOutput(
-                "");
-        appendOutput(
-                "   Please select an option from the menu.");
+        JPanel filePanel = new JPanel(new BorderLayout(8, 0));
+        filePanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Load Inventory From Text File"),
+                BorderFactory.createEmptyBorder(5, 7, 5, 7)));
+        filePathField = new JTextField();
+        JButton browseButton = new JButton("Browse...");
+        JButton loadButton = new JButton("Load File");
+        browseButton.addActionListener(event -> chooseFile());
+        loadButton.addActionListener(event -> loadProducts());
+        filePanel.add(new JLabel("Text file:"), BorderLayout.WEST);
+        filePanel.add(filePathField, BorderLayout.CENTER);
+        JPanel fileButtons = new JPanel(new BorderLayout(6, 0));
+        fileButtons.add(browseButton, BorderLayout.WEST);
+        fileButtons.add(loadButton, BorderLayout.EAST);
+        filePanel.add(fileButtons, BorderLayout.EAST);
+
+        String[] columns = {"Product ID", "Product Name", "Category", "Supplier", "Quantity", "Unit Price ($)"};
+        tableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        productTable = new JTable(tableModel) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public Component prepareRenderer(
+                    javax.swing.table.TableCellRenderer renderer,
+                    int row,
+                    int column) {
+                Component cell = super.prepareRenderer(renderer, row, column);
+
+                // Preserve the look-and-feel selection color and shade every other row.
+                if (!isRowSelected(row)) {
+                    cell.setBackground(row % 2 == 0
+                            ? Color.WHITE
+                            : new Color(232, 240, 244));
+                }
+                return cell;
+            }
+        };
+        productTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        productTable.setRowHeight(29);
+        productTable.setFillsViewportHeight(true);
+        productTable.setAutoCreateRowSorter(true);
+        productTable.getTableHeader().setReorderingAllowed(false);
+        productTable.getSelectionModel().addListSelectionListener(event -> {
+            if (!event.getValueIsAdjusting() && productTable.getSelectedRow() >= 0) {
+                loadSelectedProductIntoForm();
+            }
+        });
+
+        JScrollPane tableScroll = new JScrollPane(productTable);
+        tableScroll.setBorder(BorderFactory.createTitledBorder("Inventory Records"));
+
+        JButton removeButton = new JButton("Remove Product");
+        JButton valueButton = new JButton("Calculate Total Inventory Value");
+        JButton exitButton = new JButton("Exit");
+        removeButton.addActionListener(event -> removeProduct());
+        valueButton.addActionListener(event -> viewInventoryValue());
+        exitButton.addActionListener(event -> exitProgram());
+
+        JPanel actions = new JPanel(new BorderLayout(8, 0));
+        JPanel leftActions = new JPanel(new BorderLayout(8, 0));
+        leftActions.add(removeButton, BorderLayout.WEST);
+        leftActions.add(valueButton, BorderLayout.CENTER);
+        actions.add(leftActions, BorderLayout.WEST);
+        actions.add(exitButton, BorderLayout.EAST);
+
+        panel.add(filePanel, BorderLayout.NORTH);
+        panel.add(tableScroll, BorderLayout.CENTER);
+        panel.add(actions, BorderLayout.SOUTH);
+        return panel;
     }
 
     /**
-     * Method: appendOutput
-     * Purpose: Appends a message to the GUI output area and automatically scrolls to the newest message.
-     * Parameters: message - the text to display.
-     * Return: void.
+     * Method: createStatusBar
+     * Purpose: Creates the message area used to report selections and operation results.
+     * Parameters: none.
+     * Return: JPanel - the status bar.
      */
-    private void appendOutput(
-            String message) {
-
-        outputArea.append(
-                message + "\n");
-
-        outputArea.setCaretPosition(
-                outputArea.getDocument()
-                        .getLength());
-    }
-
-    /**
-     * Method: showError
-     * Purpose: Displays an error dialog explaining invalid input or an unsuccessful inventory operation.
-     * Parameters: message - the error message to display.
-     * Return: void.
-     */
-    private void showError(
-            String message) {
-
-        JOptionPane.showMessageDialog(
-                this,
-                message,
-                "Invalid Input",
-                JOptionPane.ERROR_MESSAGE);
+    private JPanel createStatusBar() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(5, 3, 0, 3));
+        statusLabel = new JLabel("Select a product row or enter product details to begin.");
+        statusLabel.setFont(statusLabel.getFont().deriveFont(Font.BOLD, 12f));
+        panel.add(statusLabel, BorderLayout.CENTER);
+        return panel;
     }
 
     /**
      * Method: addProduct
-     * Purpose: Collects product information through a GUI form, validates the entered values, checks for duplicate IDs and names, and adds the new product to the inventory.
+     * Purpose: Validates the form and adds a new product when its ID and name are unique.
      * Parameters: none.
      * Return: void.
      */
     private void addProduct() {
+        String productId = productIdField.getText().trim();
+        String productName = productNameField.getText().trim();
+        String category = categoryField.getText().trim();
+        String supplier = supplierField.getText().trim();
 
-        JPanel panel =
-                createProductInputPanel(
-                        false,
-                        null);
-
-        int result =
-                JOptionPane.showConfirmDialog(
-                        this,
-                        panel,
-                        "Add Item",
-                        JOptionPane.OK_CANCEL_OPTION,
-                        JOptionPane.PLAIN_MESSAGE);
-
-        if (result !=
-                JOptionPane.OK_OPTION) {
-
+        if (!validator.isValidProductId(productId)) {
+            showError("Product ID must contain exactly 7 digits.");
+            productIdField.requestFocus();
             return;
         }
-
-        String productId =
-                productIdField
-                        .getText()
-                        .trim();
-
-        String productName =
-                productNameField
-                        .getText()
-                        .trim();
-
-        String category =
-                categoryField
-                        .getText()
-                        .trim();
-
-        String supplier =
-                supplierField
-                        .getText()
-                        .trim();
-
-        String quantityText =
-                quantityField
-                        .getText()
-                        .trim();
-
-        String priceText =
-                priceField
-                        .getText()
-                        .trim();
-
-        if (!validator.isValidProductId(
-                productId)) {
-
-            showError(
-                    "Product ID must contain exactly 7 digits.");
-
-            return;
-        }
-
         if (!validator.isValidText(productName)) {
-
-            showError(
-                    "Product name cannot be empty.");
-
+            showError("Product name cannot be empty.");
+            productNameField.requestFocus();
             return;
         }
-
         if (!validator.isValidCategory(category)) {
-
-            showError(
-                    "Category must contain at least one letter. "
-                            + "Please enter a valid category.");
-
+            showError("Category must contain at least one letter.");
+            categoryField.requestFocus();
             return;
         }
-
         if (!validator.isValidSupplier(supplier)) {
-
-            showError(
-                    "Supplier name must contain at least one letter. "
-                            + "Please enter a valid supplier name.");
-
+            showError("Supplier name must contain at least one letter.");
+            supplierField.requestFocus();
             return;
         }
 
-        Integer quantity =
-                parseQuantity(
-                        quantityText);
+        Integer quantity = parseQuantity(quantityField.getText());
+        if (quantity == null) return;
+        BigDecimal price = parsePrice(priceField.getText());
+        if (price == null) return;
 
-        if (quantity == null) {
+        if (inventoryManagementSystem.findProduct(productId) != null) {
+            showError("That product ID already exists.");
             return;
         }
-
-        BigDecimal price =
-                parsePrice(
-                        priceText);
-
-        if (price == null) {
-            return;
-        }
-
-        if (inventoryManagementSystem
-                .findProduct(productId) != null) {
-
-            showError(
-                    "That product ID already exists.");
-
-            return;
-        }
-
-        if (inventoryManagementSystem
-                .containsProductName(productName)) {
-
-            showError(
-                    "That product name already exists. "
-                            + "Use Modify Item to update the existing product.");
-
+        if (inventoryManagementSystem.containsProductName(productName)) {
+            showError("That product name already exists. Use Update to change the existing product.");
             return;
         }
 
         try {
-
-            Product product =
-                    new Product(
-                            productId,
-                            productName,
-                            category,
-                            supplier,
-                            quantity,
-                            price);
-
-            boolean added =
-                    inventoryManagementSystem
-                            .addProduct(product);
-
-            if (added) {
-
-                appendOutput(
-                        "\nItem successfully added.");
-
-                displaySingleProduct(
-                        product);
-
+            Product product = new Product(productId, productName, category, supplier, quantity, price);
+            if (inventoryManagementSystem.addProduct(product)) {
+                refreshTable();
+                selectProduct(productId);
+                setStatus("Product successfully added: " + productName);
             } else {
-
-                showError(
-                        "Item could not be added.");
+                showError("Product could not be added.");
             }
-
         } catch (IllegalArgumentException exception) {
-
-            showError(
-                    "Invalid product information:\n"
-                            + exception.getMessage());
-        }
-    }
-
-    /**
-     * Method: createProductInputPanel
-     * Purpose: Creates the input form used to add or modify a product. When modifying, the form is populated with existing product information and the product ID is
-     * made non-editable.
-     * Parameters: modifying - indicates whether an existing product is modified.
-     * currentProduct - the existing product, or null when adding.
-     * Return: JPanel - the completed product input form.
-     */
-    private JPanel createProductInputPanel(
-            boolean modifying,
-            Product currentProduct) {
-
-        JPanel panel =
-                new JPanel(
-                        new GridLayout(
-                                0,
-                                2,
-                                8,
-                                8));
-
-        productIdField =
-                new JTextField();
-
-        productNameField =
-                new JTextField();
-
-        categoryField =
-                new JTextField();
-
-        supplierField =
-                new JTextField();
-
-        quantityField =
-                new JTextField();
-
-        priceField =
-                new JTextField();
-
-        if (currentProduct != null) {
-
-            productIdField.setText(
-                    currentProduct.getProductId());
-
-            productNameField.setText(
-                    currentProduct.getProductName());
-
-            categoryField.setText(
-                    currentProduct.getCategory());
-
-            supplierField.setText(
-                    currentProduct.getSupplier());
-
-            quantityField.setText(
-                    String.valueOf(
-                            currentProduct.getUnitQuantity()));
-
-            priceField.setText(
-                    currentProduct.getUnitPrice()
-                            .toPlainString());
-        }
-
-        if (modifying) {
-
-            productIdField.setEditable(false);
-        }
-
-        panel.add(
-                new JLabel("Product ID:"));
-
-        panel.add(productIdField);
-
-        panel.add(
-                new JLabel("Product Name:"));
-
-        panel.add(productNameField);
-
-        panel.add(
-                new JLabel("Category:"));
-
-        panel.add(categoryField);
-
-        panel.add(
-                new JLabel("Supplier:"));
-
-        panel.add(supplierField);
-
-        panel.add(
-                new JLabel("Quantity:"));
-
-        panel.add(quantityField);
-
-        panel.add(
-                new JLabel("Unit Price:"));
-
-        panel.add(priceField);
-
-        return panel;
-    }
-
-    /**
-     * Method: loadProducts
-     * Purpose: Allows the user to select a text file and import valid products into the inventory. Reports successful additions, skipped entries, and file errors.
-     * Parameters: none.
-     * Return: void.
-     */
-    private void loadProducts() {
-
-        JPanel panel =
-                new JPanel(
-                        new BorderLayout(
-                                5,
-                                5));
-
-        JLabel label =
-                new JLabel(
-                        "Enter the location of the text file:");
-
-        filePathField =
-                new JTextField();
-
-        JButton browseButton =
-                new JButton(
-                        "Browse...");
-
-        browseButton.addActionListener(
-                event -> chooseFile());
-
-        JPanel pathPanel =
-                new JPanel(
-                        new BorderLayout(
-                                5,
-                                5));
-
-        pathPanel.add(
-                filePathField,
-                BorderLayout.CENTER);
-
-        pathPanel.add(
-                browseButton,
-                BorderLayout.EAST);
-
-        panel.add(
-                label,
-                BorderLayout.NORTH);
-
-        panel.add(
-                pathPanel,
-                BorderLayout.CENTER);
-
-        int result =
-                JOptionPane.showConfirmDialog(
-                        this,
-                        panel,
-                        "Load Items From File",
-                        JOptionPane.OK_CANCEL_OPTION,
-                        JOptionPane.PLAIN_MESSAGE);
-
-        if (result !=
-                JOptionPane.OK_OPTION) {
-
-            return;
-        }
-
-        String filePath =
-                filePathField
-                        .getText()
-                        .trim();
-
-        if (filePath.length() >= 2
-                && filePath.startsWith("\"")
-                && filePath.endsWith("\"")) {
-
-            filePath =
-                    filePath.substring(
-                            1,
-                            filePath.length() - 1);
-        }
-
-        if (filePath.isEmpty()) {
-
-            showError(
-                    "File path cannot be empty.");
-
-            return;
-        }
-
-        if (!filePath.toLowerCase().endsWith(".txt")) {
-
-            showError(
-                    "Please select a text file with a .txt extension.");
-
-            return;
-        }
-
-        File file =
-                new File(filePath);
-
-        if (!file.exists()) {
-
-            showError(
-                    "The specified file does not exist.");
-
-            return;
-        }
-
-        if (!file.isFile()) {
-
-            showError(
-                    "The specified path is not a file.");
-
-            return;
-        }
-
-        try {
-
-            int addedCount =
-                    inventoryManagementSystem
-                            .loadProducts(filePath);
-
-            if (addedCount == -1) {
-
-                showError(
-                        "The file could not be opened.");
-
-            } else {
-
-                appendOutput(
-                        "\n========== File Loading ==========");
-
-                appendOutput(
-                        "File processing complete.");
-
-                if (inventoryManagementSystem.wasLastFileEmpty()) {
-
-                    appendOutput(
-                            "Document contained no entries.");
-
-                } else {
-
-                    appendOutput(
-                            "Items successfully added: "
-                                    + addedCount);
-
-                    int skippedCount =
-                            inventoryManagementSystem
-                                    .getLastSkippedLineCount();
-
-                    if (skippedCount > 0) {
-
-                        appendOutput(
-                                "Lines skipped due to invalid entries: "
-                                        + skippedCount);
-                    }
-                }
-            }
-
-        } catch (RuntimeException exception) {
-
-            showError(
-                    "The file could not be processed:\n"
-                            + exception.getMessage());
-        }
-    }
-
-    /**
-     * Method: chooseFile
-     * Purpose: Opens a file chooser that allows the user to select a text file and places its absolute path into the file path input field.
-     * Parameters: none.
-     * Return: void.
-     */
-    private void chooseFile() {
-
-        JFileChooser fileChooser =
-                new JFileChooser();
-
-        fileChooser.setFileFilter(
-                new FileNameExtensionFilter(
-                        "Text Files (*.txt)",
-                        "txt"));
-
-        int result =
-                fileChooser.showOpenDialog(
-                        this);
-
-        if (result ==
-                JFileChooser.APPROVE_OPTION) {
-
-            filePathField.setText(
-                    fileChooser
-                            .getSelectedFile()
-                            .getAbsolutePath());
-        }
-    }
-
-    /**
-     * Method: removeProduct
-     * Purpose: Searches for a product using its ID, displays its information, and removes it only after the user confirms the removal.
-     * Parameters: none.
-     * Return: void.
-     */
-    private void removeProduct() {
-
-        if (inventoryManagementSystem.getProductCount() == 0) {
-
-            showError(
-                    "There are currently no items in inventory.");
-
-            return;
-        }
-
-        String productId =
-                requestProductId(
-                        "Enter the 7-digit product ID to remove:");
-
-        if (productId == null) {
-            return;
-        }
-
-        Product product =
-                inventoryManagementSystem
-                        .findProduct(productId);
-
-        if (product == null) {
-
-            showError(
-                    "No product was found with that ID.");
-
-            return;
-        }
-
-        int confirmation =
-                JOptionPane.showConfirmDialog(
-                        this,
-                        productToString(product)
-                                + "\n\nRemove this product?",
-                        "Confirm Remove",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.WARNING_MESSAGE);
-
-        if (confirmation !=
-                JOptionPane.YES_OPTION) {
-
-            appendOutput(
-                    "\nProduct was not removed.");
-
-            return;
-        }
-
-        boolean removed =
-                inventoryManagementSystem
-                        .removeProduct(productId);
-
-        if (removed) {
-
-            appendOutput(
-                    "\nProduct successfully removed.");
-
-            appendOutput(
-                    "Product ID: "
-                            + productId);
-
-        } else {
-
-            showError(
-                    "Product could not be removed.");
-        }
-    }
-
-    /**
-     * Method: searchProduct
-     * Purpose: Searches the inventory using a product ID and displays the matching product information.
-     * Parameters: none.
-     * Return: void.
-     */
-    private void searchProduct() {
-
-        if (inventoryManagementSystem.getProductCount() == 0) {
-
-            showError(
-                    "There are currently no items in inventory.");
-
-            return;
-        }
-
-        String productId =
-                requestProductId(
-                        "Enter the 7-digit product ID to search:");
-
-        if (productId == null) {
-            return;
-        }
-
-        Product product =
-                inventoryManagementSystem
-                        .findProduct(productId);
-
-        if (product == null) {
-
-            showError(
-                    "No product was found with that ID.");
-
-        } else {
-
-            appendOutput(
-                    "\n========== Product Found ==========");
-
-            displaySingleProduct(
-                    product);
+            showError("Invalid product information: " + exception.getMessage());
         }
     }
 
     /**
      * Method: modifyProduct
-     * Purpose: Locates an existing product, displays its current information, validates the replacement data, and updates the product through the IMS class.
+     * Purpose: Validates the edited form values and updates the selected product.
      * Parameters: none.
      * Return: void.
      */
     private void modifyProduct() {
-
-        if (inventoryManagementSystem.getProductCount() == 0) {
-
-            showError(
-                    "There are currently no items in inventory.");
-
+        String productId = productIdField.getText().trim();
+        if (!validator.isValidProductId(productId)) {
+            showError("Select a product row or enter a valid 7-digit product ID.");
+            return;
+        }
+        Product existing = inventoryManagementSystem.findProduct(productId);
+        if (existing == null) {
+            showError("No product was found with that ID.");
             return;
         }
 
-        String productId =
-                requestProductId(
-                        "Enter the 7-digit product ID to modify:");
-
-        if (productId == null) {
-            return;
-        }
-
-        Product product =
-                inventoryManagementSystem
-                        .findProduct(productId);
-
-        if (product == null) {
-
-            showError(
-                    "No product was found with that ID.");
-
-            return;
-        }
-
-        JPanel panel =
-                createProductInputPanel(
-                        true,
-                        product);
-
-        int result =
-                JOptionPane.showConfirmDialog(
-                        this,
-                        panel,
-                        "Modify Item",
-                        JOptionPane.OK_CANCEL_OPTION,
-                        JOptionPane.PLAIN_MESSAGE);
-
-        if (result !=
-                JOptionPane.OK_OPTION) {
-
-            return;
-        }
-
-        String productName =
-                productNameField
-                        .getText()
-                        .trim();
-
-        String category =
-                categoryField
-                        .getText()
-                        .trim();
-
-        String supplier =
-                supplierField
-                        .getText()
-                        .trim();
-
-        String quantityText =
-                quantityField
-                        .getText()
-                        .trim();
-
-        String priceText =
-                priceField
-                        .getText()
-                        .trim();
-
+        String productName = productNameField.getText().trim();
+        String category = categoryField.getText().trim();
+        String supplier = supplierField.getText().trim();
         if (!validator.isValidText(productName)) {
-
-            showError(
-                    "Product name cannot be empty.");
-
+            showError("Product name cannot be empty.");
             return;
         }
-
         if (!validator.isValidCategory(category)) {
-
-            showError(
-                    "Category must contain at least one letter. "
-                            + "Please enter a valid category.");
-
+            showError("Category must contain at least one letter.");
             return;
         }
-
         if (!validator.isValidSupplier(supplier)) {
-
-            showError(
-                    "Supplier name must contain at least one letter. "
-                            + "Please enter a valid supplier name.");
-
+            showError("Supplier name must contain at least one letter.");
             return;
         }
-
-        if (!productName.equalsIgnoreCase(product.getProductName())
+        if (!productName.equalsIgnoreCase(existing.getProductName())
                 && inventoryManagementSystem.containsProductName(productName)) {
-
-            showError(
-                    "That product name already exists.");
-
+            showError("That product name already exists.");
             return;
         }
 
-        Integer quantity =
-                parseQuantity(
-                        quantityText);
+        Integer quantity = parseQuantity(quantityField.getText());
+        if (quantity == null) return;
+        BigDecimal price = parsePrice(priceField.getText());
+        if (price == null) return;
 
-        if (quantity == null) {
-            return;
-        }
-
-        BigDecimal price =
-                parsePrice(
-                        priceText);
-
-        if (price == null) {
-            return;
-        }
-
-        try {
-
-            boolean modified =
-                    inventoryManagementSystem
-                            .modifyProduct(
-                                    productId,
-                                    productName,
-                                    category,
-                                    supplier,
-                                    quantity,
-                                    price);
-
-            if (modified) {
-
-                appendOutput(
-                        "\nProduct successfully modified.");
-
-                displaySingleProduct(
-                        product);
-
-            } else {
-
-                showError(
-                        "Product could not be modified.");
-            }
-
-        } catch (IllegalArgumentException exception) {
-
-            showError(
-                    "Invalid information:\n"
-                            + exception.getMessage());
+        boolean updated = inventoryManagementSystem.modifyProduct(
+                productId, productName, category, supplier, quantity, price);
+        if (updated) {
+            refreshTable();
+            selectProduct(productId);
+            setStatus("Product successfully updated: " + productName);
+        } else {
+            showError("Product could not be updated. Check the product information.");
         }
     }
 
     /**
-     * Method: viewProducts
-     * Purpose: Retrieves and displays all inventory products in alphabetical order by product name. Displays an appropriate message when the inventory is empty.
+     * Method: loadProducts
+     * Purpose: Imports valid product records from the text file in the path field
+     * and reports successful, skipped, or empty-file results.
      * Parameters: none.
      * Return: void.
      */
-    private void viewProducts() {
-
-        appendOutput(
-                "\n========== Inventory ==========");
-
-        if (inventoryManagementSystem
-                .getProductCount() == 0) {
-
-            appendOutput(
-                    "There are currently no items in inventory.");
-
+    private void loadProducts() {
+        String filePath = filePathField.getText().trim();
+        if (filePath.length() >= 2 && filePath.startsWith("\"") && filePath.endsWith("\"")) {
+            filePath = filePath.substring(1, filePath.length() - 1);
+        }
+        if (filePath.isEmpty()) {
+            showError("File path cannot be empty.");
+            return;
+        }
+        if (!filePath.toLowerCase().endsWith(".txt")) {
+            showError("Please select a text file with a .txt extension.");
+            return;
+        }
+        File file = new File(filePath);
+        if (!file.exists() || !file.isFile()) {
+            showError("The specified text file could not be found.");
             return;
         }
 
-        int itemNumber = 1;
-
-        for (Product product :
-                inventoryManagementSystem
-                        .getProductsAlphabetically()) {
-
-            appendOutput(
-                    itemNumber
-                            + ". "
-                            + productToString(
-                            product));
-
-            appendOutput(
-                    "----------------------------------------");
-
-            itemNumber++;
+        int addedCount = inventoryManagementSystem.loadProducts(filePath);
+        if (addedCount == -1) {
+            showError("The file could not be opened.");
+            return;
         }
+        refreshTable();
+        if (inventoryManagementSystem.wasLastFileEmpty()) {
+            setStatus("File processing complete. Document contained no entries.");
+        } else {
+            setStatus("File processing complete. Added: " + addedCount
+                    + " | Skipped invalid or duplicate entries: "
+                    + inventoryManagementSystem.getLastSkippedLineCount());
+        }
+    }
+
+    /**
+     * Method: chooseFile
+     * Purpose: Opens a text-file chooser and places the selected path in the file field.
+     * Parameters: none.
+     * Return: void.
+     */
+    private void chooseFile() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileFilter(new FileNameExtensionFilter("Text Files (*.txt)", "txt"));
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            filePathField.setText(chooser.getSelectedFile().getAbsolutePath());
+        }
+    }
+
+    /**
+     * Method: removeProduct
+     * Purpose: Removes the selected product after confirmation, or asks for its ID
+     * when no table row is selected.
+     * Parameters: none.
+     * Return: void.
+     */
+    private void removeProduct() {
+        String productId = productIdField.getText().trim();
+        int selectedRow = productTable.getSelectedRow();
+        if (selectedRow >= 0) {
+            int modelRow = productTable.convertRowIndexToModel(selectedRow);
+            productId = String.valueOf(tableModel.getValueAt(modelRow, 0));
+        }
+        if (!validator.isValidProductId(productId)) {
+            productId = requestProductId("Enter the 7-digit product ID to remove:");
+        }
+        if (productId == null) return;
+
+        Product product = inventoryManagementSystem.findProduct(productId);
+        if (product == null) {
+            showError("No product was found with that ID.");
+            return;
+        }
+        int confirmation = JOptionPane.showConfirmDialog(this,
+                productToString(product) + "\n\nRemove this product?",
+                "Confirm Remove", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirmation != JOptionPane.YES_OPTION) return;
+
+        if (inventoryManagementSystem.removeProduct(productId)) {
+            refreshTable();
+            clearForm();
+            setStatus("Product " + productId + " was removed.");
+        } else {
+            showError("Product could not be removed.");
+        }
+    }
+
+    /**
+     * Method: searchProduct
+     * Purpose: Finds a product by its seven-digit ID, selects its table row,
+     * and displays its details in the form.
+     * Parameters: none.
+     * Return: void.
+     */
+    private void searchProduct() {
+        String productId = productIdField.getText().trim();
+        if (!validator.isValidProductId(productId)) {
+            productId = requestProductId("Enter the 7-digit product ID to search:");
+        }
+        if (productId == null) return;
+        Product product = inventoryManagementSystem.findProduct(productId);
+        if (product == null) {
+            showError("No product was found with that ID.");
+            return;
+        }
+        selectProduct(productId);
+        setStatus("Product found: " + product.getProductName());
     }
 
     /**
      * Method: viewInventoryValue
-     * Purpose: Retrieves and displays the total monetary value of all inventory quantities multiplied by their respective unit prices.
+     * Purpose: Calculates the total value of all inventory quantities multiplied
+     * by their unit prices and displays the result.
      * Parameters: none.
      * Return: void.
      */
     private void viewInventoryValue() {
-
-        BigDecimal totalValue =
-                inventoryManagementSystem
-                        .getTotalInventoryValue();
-
-        appendOutput(
-                "\n========== Total Inventory Value ==========");
-
-        appendOutput(
-                "$"
-                        + totalValue
-                        .setScale(2)
-                        .toPlainString());
+        BigDecimal total = inventoryManagementSystem.getTotalInventoryValue();
+        String value = "$" + total.setScale(2).toPlainString();
+        setStatus("Total Inventory Value: " + value);
+        JOptionPane.showMessageDialog(this, "Total Inventory Value: " + value,
+                "Inventory Value", JOptionPane.INFORMATION_MESSAGE);
     }
 
     /**
-     * Method: displaySingleProduct
-     * Purpose: Displays the formatted information for one product in the GUI output area.
-     * Parameters: product - the product whose information is displayed.
+     * Method: refreshTable
+     * Purpose: Rebuilds the table from the current inventory and updates the record count.
+     * Parameters: none.
      * Return: void.
      */
-    private void displaySingleProduct(
-            Product product) {
-
-        appendOutput(
-                productToString(
-                        product));
-    }
-
-    /**
-     * Method: productToString
-     * Purpose: Converts a Product object into formatted text containing its name, category, supplier, quantity, unit price, and product ID.
-     * Parameters: product - the Product object being formatted.
-     * Return: String - the formatted product information.
-     */
-    private String productToString(
-            Product product) {
-
-        return
-                "Product Name: "
-                        + product.getProductName()
-                        + "\n"
-                        + "Category: "
-                        + product.getCategory()
-                        + "\n"
-                        + "Supplier: "
-                        + product.getSupplier()
-                        + "\n"
-                        + "Quantity: "
-                        + product.getUnitQuantity()
-                        + "\n"
-                        + "Unit Price: $"
-                        + product.getUnitPrice()
-                        .setScale(2)
-                        .toPlainString()
-                        + "\n"
-                        + "Product ID: "
-                        + product.getProductId();
-    }
-
-    /**
-     * Method: requestProductId
-     * Purpose: Requests a product ID from the user and continues prompting until a valid seven-digit ID is entered or the user cancels the operation.
-     * Parameters: message - the prompt displayed to the user.
-     * Return: String - the valid product ID, or null if the user cancels the input dialog.
-     */
-    private String requestProductId(
-            String message) {
-
-        while (true) {
-
-            String input =
-                    JOptionPane.showInputDialog(
-                            this,
-                            message,
-                            "Product ID",
-                            JOptionPane.QUESTION_MESSAGE);
-
-            if (input == null) {
-
-                return null;
-            }
-
-            input =
-                    input.trim();
-
-            if (validator.isValidProductId(
-                    input)) {
-
-                return input;
-            }
-
-            showError(
-                    "Product ID must contain exactly 7 digits.");
+    private void refreshTable() {
+        if (tableModel == null) return;
+        tableModel.setRowCount(0);
+        for (Product product : inventoryManagementSystem.getProductsAlphabetically()) {
+            tableModel.addRow(new Object[]{
+                    product.getProductId(),
+                    product.getProductName(),
+                    product.getCategory(),
+                    product.getSupplier(),
+                    product.getUnitQuantity(),
+                    product.getUnitPrice().setScale(2).toPlainString()
+            });
         }
+        countLabel.setText("Products: " + inventoryManagementSystem.getProductCount());
+    }
+
+    /**
+     * Method: loadSelectedProductIntoForm
+     * Purpose: Copies the selected table record into the editable product fields.
+     * Parameters: none.
+     * Return: void.
+     */
+    private void loadSelectedProductIntoForm() {
+        int selectedRow = productTable.getSelectedRow();
+        if (selectedRow < 0) return;
+        int row = productTable.convertRowIndexToModel(selectedRow);
+        String id = String.valueOf(tableModel.getValueAt(row, 0));
+        Product product = inventoryManagementSystem.findProduct(id);
+        if (product == null) return;
+        productIdField.setText(product.getProductId());
+        productNameField.setText(product.getProductName());
+        categoryField.setText(product.getCategory());
+        supplierField.setText(product.getSupplier());
+        quantityField.setText(String.valueOf(product.getUnitQuantity()));
+        priceField.setText(product.getUnitPrice().toPlainString());
+        setStatus("Selected product " + product.getProductId() + ". Change values and click Update, or use Remove Product.");
+    }
+
+    /**
+     * Method: selectProduct
+     * Purpose: Selects the row corresponding to a product ID and scrolls it into view.
+     * Parameters: productId - the product identifier to select.
+     * Return: void.
+     */
+    private void selectProduct(String productId) {
+        for (int modelRow = 0; modelRow < tableModel.getRowCount(); modelRow++) {
+            if (productId.equals(String.valueOf(tableModel.getValueAt(modelRow, 0)))) {
+                int viewRow = productTable.convertRowIndexToView(modelRow);
+                productTable.setRowSelectionInterval(viewRow, viewRow);
+                productTable.scrollRectToVisible(productTable.getCellRect(viewRow, 0, true));
+                return;
+            }
+        }
+    }
+
+    /**
+     * Method: clearForm
+     * Purpose: Clears all product-entry fields and removes the current table selection.
+     * Parameters: none.
+     * Return: void.
+     */
+    private void clearForm() {
+        productIdField.setText("");
+        productNameField.setText("");
+        categoryField.setText("");
+        supplierField.setText("");
+        quantityField.setText("");
+        priceField.setText("");
+        productTable.clearSelection();
+        setStatus("Form cleared. Enter product details to add a new record.");
+        productIdField.requestFocusInWindow();
     }
 
     /**
      * Method: parseQuantity
-     * Purpose: Converts a quantity entered as text into an Integer and verifies that it is a non-negative whole number.
-     * Parameters: quantityText - the quantity entered by the user.
-     * Return: Integer - the valid quantity, or null
-     * if the input is invalid.
+     * Purpose: Converts quantity text into a non-negative whole number.
+     * Parameters: text - quantity entered in the form.
+     * Return: Integer - valid quantity, or null when invalid.
      */
-    private Integer parseQuantity(
-            String quantityText) {
-
-        if (quantityText == null
-                || quantityText.trim().isEmpty()) {
-
-            showError(
-                    "Quantity cannot be empty.");
-
+    private Integer parseQuantity(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            showError("Quantity cannot be empty.");
             return null;
         }
-
         try {
-
-            int quantity =
-                    Integer.parseInt(
-                            quantityText.trim());
-
-            if (!validator.isValidQuantity(
-                    quantity)) {
-
-                showError(
-                        "Quantity must be a non-negative whole number (no decimals).");
-
+            int quantity = Integer.parseInt(text.trim());
+            if (!validator.isValidQuantity(quantity)) {
+                showError("Quantity must be a non-negative whole number (no decimals).");
                 return null;
             }
-
             return quantity;
-
         } catch (NumberFormatException exception) {
-
-            showError(
-                    "Please enter a valid whole number.");
-
+            showError("Please enter a valid whole number.");
             return null;
         }
     }
 
     /**
      * Method: parsePrice
-     * Purpose: Converts a price entered as text into
-     * a BigDecimal and verifies that it is non-negative.
-     * Parameters: priceText - the unit price entered by the user.
-     * Return: BigDecimal - the valid price, or null
-     * if the input is invalid.
+     * Purpose: Converts price text into a non-negative BigDecimal amount.
+     * Parameters: text - unit price entered in the form.
+     * Return: BigDecimal - valid price, or null when invalid.
      */
-    private BigDecimal parsePrice(
-            String priceText) {
-
-        if (priceText == null
-                || priceText.trim().isEmpty()) {
-
-            showError(
-                    "Price cannot be empty.");
-
+    private BigDecimal parsePrice(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            showError("Unit price cannot be empty.");
             return null;
         }
-
         try {
-
-            BigDecimal price =
-                    new BigDecimal(
-                            priceText.trim());
-
-            if (!validator.isValidPrice(
-                    price)) {
-
-                showError(
-                        "Price cannot be negative.");
-
+            BigDecimal price = new BigDecimal(text.trim());
+            if (!validator.isValidPrice(price)) {
+                showError("Price cannot be negative.");
                 return null;
             }
-
             return price;
-
         } catch (NumberFormatException exception) {
-
-            showError(
-                    "Please enter a valid price.");
-
+            showError("Please enter a valid price.");
             return null;
         }
     }
 
     /**
+     * Method: requestProductId
+     * Purpose: Prompts for a valid seven-digit product ID when one is not in the form.
+     * Parameters: message - prompt displayed to the user.
+     * Return: String - valid ID, or null if cancelled.
+     */
+    private String requestProductId(String message) {
+        while (true) {
+            String input = JOptionPane.showInputDialog(this, message, "Product ID", JOptionPane.QUESTION_MESSAGE);
+            if (input == null) return null;
+            input = input.trim();
+            if (validator.isValidProductId(input)) return input;
+            showError("Product ID must contain exactly 7 digits.");
+        }
+    }
+
+    /**
+     * Method: productToString
+     * Purpose: Formats a product's fields for confirmation and information dialogs.
+     * Parameters: product - product to format.
+     * Return: String - formatted product details.
+     */
+    private String productToString(Product product) {
+        return "Product Name: " + product.getProductName()
+                + "\nCategory: " + product.getCategory()
+                + "\nSupplier: " + product.getSupplier()
+                + "\nQuantity: " + product.getUnitQuantity()
+                + "\nUnit Price: $" + product.getUnitPrice().setScale(2).toPlainString()
+                + "\nProduct ID: " + product.getProductId();
+    }
+
+    /**
+     * Method: showError
+     * Purpose: Displays an error dialog and writes the message to the status bar.
+     * Parameters: message - error description.
+     * Return: void.
+     */
+    private void showError(String message) {
+        setStatus(message);
+        JOptionPane.showMessageDialog(this, message, "Invalid Input", JOptionPane.ERROR_MESSAGE);
+    }
+
+    /**
+     * Method: setStatus
+     * Purpose: Updates the status bar with the latest operation message.
+     * Parameters: message - status text to display.
+     * Return: void.
+     */
+    private void setStatus(String message) {
+        statusLabel.setText(message);
+    }
+
+    /**
      * Method: exitProgram
-     * Purpose: Requests confirmation before closing the Inventory Management System window.
+     * Purpose: Requests confirmation before closing the application.
      * Parameters: none.
      * Return: void.
      */
     private void exitProgram() {
-
-        int result =
-                JOptionPane.showConfirmDialog(
-                        this,
-                        "Are you sure you want to exit?",
-                        "Exit",
-                        JOptionPane.YES_NO_OPTION);
-
-        if (result ==
-                JOptionPane.YES_OPTION) {
-
+        int result = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to exit the Inventory Management System?",
+                "Exit", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (result == JOptionPane.YES_OPTION) {
             dispose();
         }
     }
