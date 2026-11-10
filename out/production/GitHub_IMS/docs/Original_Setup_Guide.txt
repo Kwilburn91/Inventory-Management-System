@@ -1,0 +1,38 @@
+IMS SQLITE VERSION - SETUP AND USER'S GUIDE
+
+FILES INCLUDED
+- Main.java: launches the graphical application.
+- GUI.java: Swing interface; users select the SQLite database file from the GUI.
+- DatabaseManager.java: performs database CRUD and inventory queries using JDBC.
+- Product.java: validates product model.
+- ProductValidator.java: input validation class.
+- inventorySample.db: SQLite database populated with 20 sample products.
+
+INTELLIJ SETUP
+1. Copy the five Java files into the source folder of your existing Java project.
+2. Keep sqlite-jdbc-3.34.0.jar in the project's Module Dependencies (Compile scope).
+3. Keep inventorySample.db in a convenient folder. The application does not assume or hardcode its location.
+4. Run Main.java.
+5. In the GUI, click Browse, select inventorySample.db, then click Connect.
+
+DATABASE DESIGN
+Table: products
+Columns:
+- product_id TEXT PRIMARY KEY (exactly seven digits)
+- product_name TEXT NOT NULL UNIQUE (case-insensitive)
+- category TEXT NOT NULL
+- supplier TEXT NOT NULL
+- unit_quantity INTEGER NOT NULL (non-negative)
+- unit_price TEXT NOT NULL (decimal currency string)
+
+The database must be selected by the user each time the application starts. The GUI does not create a database or assume a location. It checks that the selected file contains the expected products table.
+
+DATABASE BEHAVIOR
+- Add inserts directly into SQLite.
+- Update changes the selected SQLite row.
+- Search retrieves a product by ID from SQLite.
+- Remove deletes the selected record from SQLite after confirmation.
+- The table is refreshed from SQLite after each successful change.
+- Inventory total is calculated from the current database values.
+
+All database writes use JDBC prepared statements and are committed immediately by SQLite's default auto-commit mode. The sample template uses the six required columns shown above. Users can inspect inventorySample.db with an SQLite command-line tool or SQLite GUI while the application is running; refresh/reopen the table in that tool to see committed changes.

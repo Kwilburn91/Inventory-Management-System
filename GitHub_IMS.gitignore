@@ -1,0 +1,23 @@
+
+# IntelliJ IDEA configuration files
+.idea/
+*.iml
+
+# Maven build output
+target/
+
+# IntelliJ and Java build output
+out/
+*.class
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# SQLite temporary files
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Log files
+*.log
