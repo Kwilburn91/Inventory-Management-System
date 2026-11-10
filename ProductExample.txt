@@ -1,2 +1,0 @@
-productID-productName-Category-Supplier-Quantity-Price
-1234567-Wireless Keyboard-Electronics-MicroCenter-42-29.99
