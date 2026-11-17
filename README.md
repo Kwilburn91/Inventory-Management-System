@@ -18,22 +18,22 @@ This project is a Java console-based Inventory Management System (IMS). The appl
 - Calculate and display the total inventory value.
 - Exit the application.
 
-The application uses an `ArrayList<Product>` to store and manage `Product` objects. Each product contains a unique 7-digit product ID, product name, category, supplier, quantity, and unit price.
+The application uses an `ArrayList<IMS.Product>` to store and manage `IMS.Product` objects. Each product contains a unique 7-digit product ID, product name, category, supplier, quantity, and unit price.
 
 ## 2. Important Programming Concepts and Tools
 
 The project demonstrates several important Java programming concepts:
 
-- **Object-Oriented Programming (OOP):** The application is organized into multiple classes, including `Main`, `IMS`, `Product`, and `ProductValidator`.
-- **Encapsulation:** The `Product` class declares its fields as `private` and provides getter and setter methods to access and modify product information.
-- **Classes and Objects:** `Product` objects represent individual inventory items.
-- **Collections and ArrayLists:** An `ArrayList<Product>` stores and manages the inventory collection.
+- **Object-Oriented Programming (OOP):** The application is organized into multiple classes, including `IMS.Main`, `IMS`, `IMS.Product`, and `IMS.ProductValidator`.
+- **Encapsulation:** The `IMS.Product` class declares its fields as `private` and provides getter and setter methods to access and modify product information.
+- **Classes and Objects:** `IMS.Product` objects represent individual inventory items.
+- **Collections and ArrayLists:** An `ArrayList<IMS.Product>` stores and manages the inventory collection.
 - **Methods:** Separate methods handle adding, importing, searching, modifying, removing, displaying, validating, and calculating inventory values.
 - **Control Flow:** `if/else`, `switch`, `while`, and `for` statements control application behavior and menu selection.
 - **Input/Output:** Java's `Scanner` class collects keyboard and file input, while `System.out.print()` and `System.out.println()` display information.
 - **File Input:** The `File` and `Scanner` classes read product records from a text file.
 - **Exception Handling:** `try/catch` blocks handle invalid numeric input, file errors, and validation exceptions.
-- **Input Validation:** The `ProductValidator` class checks product information before it is stored or modified.
+- **Input Validation:** The `IMS.ProductValidator` class checks product information before it is stored or modified.
 - **Regular Expressions:** Regular expressions validate product IDs, categories, and supplier names.
 - **String Manipulation:** Methods such as `trim()`, `split()`, `substring()`, and `matches()` process user input and file records.
 - **Duplicate Detection:** The system searches for existing product IDs before adding new products.
@@ -59,7 +59,7 @@ The application accepts the following menu selections:
 When manually adding a product, the user enters:
 
 - 7-digit product ID
-- Product name
+- IMS.Product name
 - Category
 - Supplier
 - Quantity as a non-negative whole number
@@ -97,7 +97,7 @@ The application displays messages depending on the selected operation:
 - **Display All Items:** Displays products alphabetically by name, including their price, quantity, supplier, category, and ID.
 - **Display Total Inventory Value:** Shows the combined value of all inventory quantities at their respective unit prices, formatted as currency.
 - **Empty Inventory:** Informs the user when no products are available for operations requiring existing items.
-- **Duplicate Product ID:** Prevents a product from being added when its ID already exists.
+- **Duplicate IMS.Product ID:** Prevents a product from being added when its ID already exists.
 - **Invalid Input:** Displays appropriate error messages when user input fails validation.
 - **Invalid Menu Selection:** Requests a menu number between 1 and 8.
 - **Invalid File:** Reports when the specified file cannot be opened.
@@ -105,10 +105,10 @@ The application displays messages depending on the selected operation:
 
 ## 4. Data Validation Rules
 
-The application uses the `ProductValidator` class to ensure product information meets the required standards.
+The application uses the `IMS.ProductValidator` class to ensure product information meets the required standards.
 
-- **Product ID:** Must contain exactly 7 digits.
-- **Product Name:** Cannot be null, empty, or blank.
+- **IMS.Product ID:** Must contain exactly 7 digits.
+- **IMS.Product Name:** Cannot be null, empty, or blank.
 - **Category:** Must contain at least one letter.
 - **Supplier:** Must contain at least one letter.
 - **Quantity:** Must be a non-negative whole number without decimals.
