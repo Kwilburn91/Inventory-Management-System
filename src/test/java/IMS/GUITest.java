@@ -1,17 +1,19 @@
+package IMS;
 /**
- * Kelly Wilburn
+ * @author Kelly Wilburn
  * CEN 3024 - Software Development 1
- * November 9, 2026
- * Class: GUITest
- * Purpose: Tests the initial Swing interface of the Inventory Management System.
- * Verifies window settings, product fields, table configuration, and the
- * availability of database actions before a database connection is established.
+ * @since November 16, 2026
+ * * Tests the initial state of the {@link GUI} Swing interface for the
+ *  * Inventory Management System. Uses JUnit 5 to verify window properties,
+ *  * input components, table configuration, and database-dependent controls.
+ *  * The suite constructs the window on Swing's event-dispatch thread and
+ *  * uses reflection to inspect otherwise private GUI components; it requires
+ *  * a graphical environment and disposes of the window after each test.
  */
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -25,7 +27,6 @@ import java.awt.event.AWTEventListener;
 import java.awt.event.WindowEvent;
 import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicReference;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
@@ -35,16 +36,17 @@ class GUITest {
     private AWTEventListener dialogCloser;
 
     /**
-     * Method: setUp
-     * Purpose: Creates the GUI on the Swing event-dispatch thread and closes
-     * the expected startup information popup automatically during tests.
-     * Parameters: none.
-     * Return: void.
+     * Prepares a fresh GUI for each test by checking for a display, installing
+     * a listener that closes startup dialogs, and constructing {@link GUI}
+     * on Swing's event-dispatch thread.
+     *
+     * @throws Exception if the GUI cannot be created on the event-dispatch thread
      */
     @BeforeEach
     void setUp() throws Exception {
         assumeFalse(GraphicsEnvironment.isHeadless(),
-                "GUI tests require a desktop graphics environment.");
+
+                "IMS.GUI tests require a desktop graphics environment.");
 
         dialogCloser = event -> {
             if (event instanceof WindowEvent
@@ -63,11 +65,10 @@ class GUITest {
     }
 
     /**
-     * Method: tearDown
-     * Purpose: Closes the test window and removes the popup listener so tests
-     * do not leave application windows or event listeners running.
-     * Parameters: none.
-     * Return: void.
+     * Disposes of the GUI and removes the startup-dialog listener after each
+     * test to avoid retaining windows and global event listeners.
+     *
+     * @throws Exception if disposing of the GUI on the event-dispatch thread fails
      */
     @AfterEach
     void tearDown() throws Exception {
@@ -80,11 +81,17 @@ class GUITest {
     }
 
     /**
-     * Method: getField
-     * Purpose: Reads a private GUI component for inspection without modifying
-     * the application source code.
-     * Parameters: name - name of the GUI field; type - expected component class.
-     * Return: T - the requested GUI component.
+     * Reads a private GUI field through reflection so its component state can
+     * be tested without changing the application's encapsulation.
+     *
+     * @param name the exact declared name of the GUI field to inspect
+     * @param type the expected runtime type of the field's value
+     * @param <T> the component or value type to return
+     * @return the field's value cast to the expected type
+     * @throws NoSuchFieldException if {@code GUI} has no field with that name
+     * @throws IllegalAccessException if the field value cannot be read
+     * @throws SecurityException if access to the field is denied
+     * @throws ClassCastException if the value does not match {@code type}
      */
     private <T> T getField(String name, Class<T> type) throws Exception {
         Field field = GUI.class.getDeclaredField(name);
@@ -97,29 +104,30 @@ class GUITest {
     // =========================================================
 
     /**
-     * Method: testWindowTitleAndVisibility
-     * Purpose: Verifies that the inventory application opens with the correct title.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that the main inventory window has the expected title, is
+     * visible, and has an initialized content pane.
      */
     @Test
     void testWindowTitleAndVisibility() {
-        assertAll("Main GUI window",
+
+        assertAll("IMS.Main IMS.GUI window",
+
                 () -> assertEquals("IMS - Inventory Management System", gui.getTitle()),
                 () -> assertTrue(gui.isVisible()),
                 () -> assertNotNull(gui.getContentPane()));
     }
 
     /**
-     * Method: testProductEntryFieldsExist
-     * Purpose: Verifies that all six product input fields and the database path
-     * field are initialized when the window opens.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that the six product-entry text fields and the database-path
+     * field are initialized when the GUI is created.
+     *
+     * @throws Exception if reflection cannot access a required GUI field
      */
     @Test
     void testProductEntryFieldsExist() throws Exception {
-        assertAll("Product entry fields",
+
+        assertAll("IMS.Product entry fields",
+
                 () -> assertNotNull(getField("productIdField", JTextField.class)),
                 () -> assertNotNull(getField("productNameField", JTextField.class)),
                 () -> assertNotNull(getField("categoryField", JTextField.class)),
@@ -134,11 +142,10 @@ class GUITest {
     // =========================================================
 
     /**
-     * Method: testInventoryTableStartsEmpty
-     * Purpose: Verifies that the inventory table initially has no product rows
-     * and contains the six required column headings.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that the initial inventory table contains no product rows and
+     * exposes the six required product column headings.
+     *
+     * @throws Exception if reflection cannot access the inventory table
      */
     @Test
     void testInventoryTableStartsEmpty() throws Exception {
@@ -146,8 +153,11 @@ class GUITest {
         assertAll("Initial inventory table",
                 () -> assertEquals(0, table.getRowCount()),
                 () -> assertEquals(6, table.getColumnCount()),
-                () -> assertEquals("Product ID", table.getColumnName(0)),
-                () -> assertEquals("Product Name", table.getColumnName(1)),
+
+                () -> assertEquals("IMS.Product ID", table.getColumnName(0)),
+
+                () -> assertEquals("IMS.Product Name", table.getColumnName(1)),
+
                 () -> assertEquals("Category", table.getColumnName(2)),
                 () -> assertEquals("Supplier", table.getColumnName(3)),
                 () -> assertEquals("Quantity", table.getColumnName(4)),
@@ -155,10 +165,10 @@ class GUITest {
     }
 
     /**
-     * Method: testTableAllowsMultipleSelection
-     * Purpose: Verifies that multiple inventory rows may be selected for removal.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that the inventory table allows multiple noncontiguous rows
+     * to be selected for a batch removal operation.
+     *
+     * @throws Exception if reflection cannot access the inventory table
      */
     @Test
     void testTableAllowsMultipleSelection() throws Exception {
@@ -172,11 +182,10 @@ class GUITest {
     // =========================================================
 
     /**
-     * Method: testDatabaseActionsDisabledBeforeConnection
-     * Purpose: Verifies that inventory operations are unavailable before the
-     * user connects to a database.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that add, update, search, remove, and inventory-value controls
+     * remain disabled until a database connection is established.
+     *
+     * @throws Exception if reflection cannot access the action buttons
      */
     @Test
     void testDatabaseActionsDisabledBeforeConnection() throws Exception {
@@ -189,10 +198,10 @@ class GUITest {
     }
 
     /**
-     * Method: testInitialConnectionInstructions
-     * Purpose: Verifies that the status bar instructs users to connect a database.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that the initial status message prompts the user to establish
+     * a database connection before performing inventory operations.
+     *
+     * @throws Exception if reflection cannot access the status label
      */
     @Test
     void testInitialConnectionInstructions() throws Exception {

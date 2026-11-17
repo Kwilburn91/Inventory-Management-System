@@ -1,11 +1,14 @@
+package IMS;
 /**
- * Kelly Wilburn
+ * @author Kelly Wilburn
  * CEN 3024 - Software Development 1
- * November 9, 2026
- * Class: DatabaseManagerTest
- * Purpose: Tests SQLite connection, database validation, product creation,
- * searching, updating, removal, rejected records, and inventory valuation.
- * Uses a temporary database to protect the user's inventory data.
+ * @since November 16, 2026
+ * Tests the {@link DatabaseManager} persistence layer of the Inventory
+ * Management System using JUnit 5 and an isolated SQLite database.
+ * Exercises database connections, product CRUD operations, duplicate
+ * detection, invalid-record cleanup, and total inventory valuation.
+ * {@link Product} instances provide valid test data, while a temporary
+ * database keeps these tests separate from the user's inventory.
  */
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,10 +31,11 @@ class DatabaseManagerTest {
     private Path databasePath;
 
     /**
-     * Method: setUp
-     * Purpose: Creates a separate SQLite database and required products table before each test.
-     * Parameters: none.
-     * Return: void.
+     * Creates a separate SQLite database and its products table before each
+     * test, then connects a new {@link DatabaseManager} to that database.
+     *
+     * @throws SQLException if the temporary database, table, or connection
+     *         cannot be created
      */
     @BeforeEach
     void setUp() throws SQLException {
@@ -47,10 +51,9 @@ class DatabaseManagerTest {
     }
 
     /**
-     * Method: tearDown
-     * Purpose: Closes the database connection after each test.
-     * Parameters: none.
-     * Return: void.
+     * Closes the active {@link DatabaseManager} connection after each test.
+     *
+     * @throws SQLException if closing the database connection fails
      */
     @AfterEach
     void tearDown() throws SQLException {
@@ -60,11 +63,16 @@ class DatabaseManagerTest {
     }
 
     /**
-     * Method: createProduct
-     * Purpose: Creates a valid product with a unique ID and specified price and quantity.
-     * Parameters: id - product identifier; name - product name; quantity - units;
-     * price - price represented as decimal text.
-     * Return: Product - the new product.
+     * Constructs a valid {@link Product} with standard test category and
+     * supplier values and caller-specified identifier, name, quantity, and price.
+     *
+     * @param id the seven-digit product identifier
+     * @param name the product name
+     * @param quantity the non-negative number of units in stock
+     * @param price the non-negative unit price in decimal-string format
+     * @return a new product with the specified test data
+     * @throws NumberFormatException if {@code price} is not a valid decimal value
+     * @throws IllegalArgumentException if a product field fails validation
      */
     private Product createProduct(String id, String name, int quantity, String price) {
         return new Product(id, name, "Electronics", "Tech Supply", quantity,
@@ -75,10 +83,10 @@ class DatabaseManagerTest {
     // Test 1: Connect to Database
     // =========================================================
     /**
-     * Method: testConnectAndCloseDatabase
-     * Purpose: Verifies that the manager connects and closes successfully.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that the database manager reports an open connection and that
+     * closing the connection changes the reported state to disconnected.
+     *
+     * @throws SQLException if the database connection cannot be closed
      */
     @Test
     void testConnectAndCloseDatabase() throws SQLException {
@@ -88,10 +96,8 @@ class DatabaseManagerTest {
     }
 
     /**
-     * Method: testInvalidDatabasePathIsRejected
-     * Purpose: Verifies that missing or blank database paths are rejected.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that attempting to connect to a blank path or a nonexistent
+     * database file produces {@link SQLException}.
      */
     @Test
     void testInvalidDatabasePathIsRejected() {
@@ -105,10 +111,10 @@ class DatabaseManagerTest {
     // Test 2: Create and Read Data
     // =========================================================
     /**
-     * Method: testInsertAndFindProduct
-     * Purpose: Verifies that an inserted product can be found by ID and name.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that an inserted product can be found by identifier and by a
+     * case-insensitive name search, and is included in counts and listings.
+     *
+     * @throws SQLException if a database insert or query fails
      */
     @Test
     void testInsertAndFindProduct() throws SQLException {
@@ -122,10 +128,12 @@ class DatabaseManagerTest {
     }
 
     /**
-     * Method: testDuplicateProductIsRejected
-     * Purpose: Verifies that duplicate product IDs and names cannot be inserted.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that attempting to insert duplicate product identifiers or
+     * case-insensitive duplicate names raises {@link SQLException}, leaving
+     * the existing product count unchanged.
+     *
+     * @throws SQLException if the initial test product cannot be inserted
+     *         or the final product count cannot be queried
      */
     @Test
     void testDuplicateProductIsRejected() throws SQLException {
@@ -139,10 +147,10 @@ class DatabaseManagerTest {
     }
 
     /**
-     * Method: testSearchMissingProduct
-     * Purpose: Verifies that searching for an unknown ID returns null.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that searching for an identifier absent from the database
+     * returns {@code null} instead of a product.
+     *
+     * @throws SQLException if the product lookup fails
      */
     @Test
     void testSearchMissingProduct() throws SQLException {
@@ -153,10 +161,10 @@ class DatabaseManagerTest {
     // Test 3: Update and Remove Data
     // =========================================================
     /**
-     * Method: testUpdateProduct
-     * Purpose: Verifies that a saved product's details can be updated.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that updating a stored product changes its name, category,
+     * quantity, and price while retaining access by its original identifier.
+     *
+     * @throws SQLException if the product insert, update, or lookup fails
      */
     @Test
     void testUpdateProduct() throws SQLException {
@@ -172,10 +180,10 @@ class DatabaseManagerTest {
     }
 
     /**
-     * Method: testDeleteSingleProduct
-     * Purpose: Verifies that deleting one product removes it from the database.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that removing one product deletes its database record and
+     * reduces the total product count to zero.
+     *
+     * @throws SQLException if the product insert, delete, or query fails
      */
     @Test
     void testDeleteSingleProduct() throws SQLException {
@@ -186,12 +194,13 @@ class DatabaseManagerTest {
     }
 
     /**
-     * Method: testDeleteMultipleProducts
-     * Purpose: Verifies that multiple selected product IDs are removed together.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that batch deletion removes the requested product identifiers
+     * while leaving unselected products in the database.
+     *
+     * @throws SQLException if any product insert, deletion, or query fails
      */
     @Test
+
     void testDeleteMultipleProducts() throws SQLException {
         manager.insertProduct(createProduct("1234567", "Keyboard", 4, "25.50"));
         manager.insertProduct(createProduct("2345678", "Mouse", 2, "10.00"));
@@ -207,10 +216,9 @@ class DatabaseManagerTest {
     // Test 4: Display Total Inventory Value
     // =========================================================
     /**
-     * Method: testEmptyInventoryValue
-     * Purpose: Verifies that an empty inventory has zero total value.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that the total inventory value for an empty database is zero.
+     *
+     * @throws SQLException if the inventory valuation query fails
      */
     @Test
     void testEmptyInventoryValue() throws SQLException {
@@ -218,10 +226,10 @@ class DatabaseManagerTest {
     }
 
     /**
-     * Method: testCalculatedInventoryValue
-     * Purpose: Verifies that total value equals the sum of quantity multiplied by price.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that total inventory value sums quantity multiplied by unit
+     * price across all stored products.
+     *
+     * @throws SQLException if test products cannot be inserted or valued
      */
     @Test
     void testCalculatedInventoryValue() throws SQLException {
@@ -234,11 +242,12 @@ class DatabaseManagerTest {
     // Test 5: Reject Invalid Database Records
     // =========================================================
     /**
-     * Method: testInvalidRecordsCanBeIdentifiedAndRemoved
-     * Purpose: Verifies that invalid rows are reported and can be deleted without
-     * removing valid inventory records.
-     * Parameters: none.
-     * Return: void.
+     * Inserts an invalid database row alongside a valid product and verifies
+     * that rejected records are reported and removable without deleting the
+     * valid product.
+     *
+     * @throws SQLException if the test row cannot be inserted or database
+     *         inspection and cleanup fail
      */
     @Test
     void testInvalidRecordsCanBeIdentifiedAndRemoved() throws SQLException {

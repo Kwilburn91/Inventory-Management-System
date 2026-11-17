@@ -1,17 +1,18 @@
+package IMS;
 /**
- * Kelly Wilburn
- * CEN 3024 - Software Development 1
- * November 9, 2026
- * Class: MainTest
- * Purpose: Tests the graphical Inventory Management System entry point.
- * Verifies that Main provides the correct startup method and launches the
- * application window through Swing rather than using the former console menu.
+ * @authorKelly Wilburn
+ * Course: CEN 3024 - Software Development 1
+ * @since November 16, 2026
+ * Tests the Inventory Management System application's entry point.
+ * Verifies that {@link Main} declares a standard Java entry point and
+ * launches the {@link GUI} Swing window instead of the former console menu.
+ * The window-launch test requires a graphical environment and uses JUnit 5
+ * and Swing utilities to detect and clean up the application window.
  */
 
 import org.junit.jupiter.api.Test;
-
 import javax.swing.JDialog;
-import javax.swing.JFrame;
+
 import javax.swing.SwingUtilities;
 import java.awt.AWTEvent;
 import java.awt.Frame;
@@ -22,7 +23,6 @@ import java.awt.event.WindowEvent;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.atomic.AtomicReference;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
@@ -33,11 +33,11 @@ class MainTest {
     // =========================================================
 
     /**
-     * Method: testMainMethodExists
-     * Purpose: Verifies that the application exposes the standard public static
-     * void main(String[] args) entry point.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that {@link Main} declares a public, static entry point named
+     * {@code main} that accepts a {@code String[]} and returns {@code void}.
+     *
+     * @throws NoSuchMethodException if the standard main method is missing
+     * @throws SecurityException if reflective access to Main is denied
      */
     @Test
     void testMainMethodExists() throws Exception {
@@ -53,16 +53,17 @@ class MainTest {
     // =========================================================
 
     /**
-     * Method: testMainLaunchesInventoryWindow
-     * Purpose: Verifies that running main creates a visible inventory GUI with
-     * the expected title. Automatically closes the startup popup and test window.
-     * Parameters: none.
-     * Return: void.
+     * Runs {@link Main#main(String[])} and verifies that it creates a visible
+     * {@link GUI} window with the required application title. Skips the test
+     * in headless environments and closes startup dialogs and test windows.
+     *
+     * @throws Exception if Swing event dispatching or window inspection fails
      */
     @Test
     void testMainLaunchesInventoryWindow() throws Exception {
         assumeFalse(GraphicsEnvironment.isHeadless(),
-                "Main window test requires a desktop graphics environment.");
+
+                "IMS.Main window test requires a desktop graphics environment.");
 
         AWTEventListener dialogCloser = event -> {
             if (event instanceof WindowEvent
@@ -77,7 +78,8 @@ class MainTest {
         try {
             Main.main(new String[0]);
 
-            // Main schedules GUI construction; this barrier waits for that work.
+            // IMS.Main schedules IMS.GUI construction; this barrier waits for that work.
+
             SwingUtilities.invokeAndWait(() -> { });
 
             AtomicReference<GUI> launched = new AtomicReference<>();
@@ -89,7 +91,8 @@ class MainTest {
                 }
             });
 
-            assertNotNull(launched.get(), "Main did not create an inventory GUI.");
+            assertNotNull(launched.get(), "IMS.Main did not create an inventory IMS.GUI.");
+
             assertAll("Application startup",
                     () -> assertEquals("IMS - Inventory Management System",
                             launched.get().getTitle()),

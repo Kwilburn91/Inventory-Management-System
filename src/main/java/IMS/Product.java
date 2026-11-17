@@ -1,11 +1,12 @@
+package IMS;
 /**
- * Kelly Wilburn
- * CEN 3024 - Software Development 1
- * Date: November 8, 2026
- * Class: Product
- * Purpose: Represents one inventory item and stores its identifying details:
- * category, supplier, quantity, and unit price. Values are validated before storage.
+ @authorKelly Wilburn
+  * Course: CEN 3024 - Software Development 1
+  * @since November 16, 2026
+ * Class: IMS.Product
+ * Represents a single inventory record containing its identifier, name, category, supplier, quantity, and unit price. Uses IMS.ProductValidator to enforce field requirements before storing values; IMS.DatabaseManager persists and retrieves IMS.Product objects.
  */
+
 import java.math.BigDecimal;
 
 public class Product {
@@ -23,210 +24,251 @@ public class Product {
     private BigDecimal unitPrice;
 
     /**
-     * Method: Product
-     * Purpose: Initializes a new instance of this class.
-     * Arguments: productId, productName, category, supplier, unitQuantity, unitPrice.
-     * Returns: none (void method).
+     * Creates a product and validates all supplied inventory fields before storing them.
+     * @param productId seven-digit product identifier
+     * @param productName name of the inventory product
+     * @param category product category, containing at least one letter
+     * @param supplier supplier name, containing at least one letter
+     * @param unitQuantity nonnegative number of units in stock
+     * @param unitPrice nonnegative price per unit
+     * @throws IllegalArgumentException if any supplied field fails validation
      */
     public Product(
+
             String productId,
+
             String productName,
+
             String category,
+
             String supplier,
+
             int unitQuantity,
+
             BigDecimal unitPrice) {
 
         ProductValidator validator =
+
                 new ProductValidator();
 
         this.productId =
+
                 validator.validateProductId(
+
                         productId);
 
         this.productName =
+
                 validator.validateText(
+
                         productName,
-                        "Product name");
+
+                        "IMS.Product name");
 
         this.category =
+
                 validator.validateCategory(category);
 
         this.supplier =
+
                 validator.validateSupplier(supplier);
 
         this.unitQuantity =
+
                 validator.validateQuantity(
+
                         unitQuantity);
 
         this.unitPrice =
+
                 validator.validatePrice(
+
                         unitPrice);
+
     }
 
     /**
-     * Method: setProductId
-     * Purpose: Validates and updates the product identifier.
-     * Arguments: productId.
-     * Returns: none (void method).
+     * Validates and updates the product identifier.
+     * @param productId seven-digit product identifier
+     * @throws IllegalArgumentException if any supplied field fails validation
      */
     public void setProductId(
+
             String productId) {
 
         ProductValidator validator =
+
                 new ProductValidator();
 
         this.productId =
+
                 validator.validateProductId(
+
                         productId);
+
     }
 
     /**
-     * Method: setProductName
-     * Purpose: Validates and updates the product name.
-     * Arguments: productName.
-     * Returns: none (void method).
+     * Validates and updates the product name.
+     * @param productName name of the inventory product
+     * @throws IllegalArgumentException if any supplied field fails validation
      */
     public void setProductName(
+
             String productName) {
 
         ProductValidator validator =
+
                 new ProductValidator();
 
         this.productName =
+
                 validator.validateText(
+
                         productName,
-                        "Product name");
+
+                        "IMS.Product name");
+
     }
 
     /**
-     * Method: setCategory
-     * Purpose: Validates and updates the product category.
-     * Arguments: category.
-     * Returns: none (void method).
+     * Validates and updates the category.
+     * @param category product category, containing at least one letter
+     * @throws IllegalArgumentException if any supplied field fails validation
      */
     public void setCategory(
+
             String category) {
 
         ProductValidator validator =
+
                 new ProductValidator();
 
         this.category =
+
                 validator.validateCategory(category);
+
     }
 
     /**
-     * Method: setSupplier
-     * Purpose: Validates and updates the supplier name.
-     * Arguments: supplier.
-     * Returns: none (void method).
+     * Validates and updates the supplier name.
+     * @param supplier supplier name, containing at least one letter
+     * @throws IllegalArgumentException if any supplied field fails validation
      */
     public void setSupplier(
+
             String supplier) {
 
         ProductValidator validator =
+
                 new ProductValidator();
 
         this.supplier =
+
                 validator.validateSupplier(supplier);
+
     }
 
     /**
-     * Method: setUnitQuantity
-     * Purpose: Validates and updates the inventory quantity.
-     * Arguments: unitQuantity.
-     * Returns: none (void method).
+     * Validates and updates the quantity in stock.
+     * @param unitQuantity nonnegative number of units in stock
+     * @throws IllegalArgumentException if any supplied field fails validation
      */
     public void setUnitQuantity(
+
             int unitQuantity) {
 
         ProductValidator validator =
+
                 new ProductValidator();
 
         this.unitQuantity =
+
                 validator.validateQuantity(
+
                         unitQuantity);
+
     }
 
     /**
-     * Method: setUnitPrice
-     * Purpose: Validates and updates the unit price.
-     * Arguments: unitPrice.
-     * Returns: none (void method).
+     * Validates and updates the unit price.
+     * @param unitPrice nonnegative price per unit
+     * @throws IllegalArgumentException if any supplied field fails validation
      */
     public void setUnitPrice(
+
             BigDecimal unitPrice) {
 
         ProductValidator validator =
+
                 new ProductValidator();
 
         this.unitPrice =
+
                 validator.validatePrice(
+
                         unitPrice);
+
     }
 
     /**
-     * Method: getProductId
-     * Purpose: Prompts for and returns a valid product identifier.
-     * Arguments: none.
-     * Returns: String.
+     * Returns the stored product identifier.
+     * @return current product identifier
      */
     public String getProductId() {
 
         return productId;
+
     }
 
     /**
-     * Method: getProductName
-     * Purpose: Validates and updates the product name.
-     * Arguments: none.
-     * Returns: String.
+     * Returns the stored product name.
+     * @return current product name
      */
     public String getProductName() {
 
         return productName;
+
     }
 
     /**
-     * Method: getCategory
-     * Purpose: Validates and updates the product category.
-     * Arguments: none.
-     * Returns: String.
+     * Returns the stored category.
+     * @return current category
      */
     public String getCategory() {
 
         return category;
+
     }
 
     /**
-     * Method: getSupplier
-     * Purpose: Validates and updates the supplier name.
-     * Arguments: none.
-     * Returns: String.
+     * Returns the stored supplier name.
+     * @return current supplier name
      */
     public String getSupplier() {
 
         return supplier;
+
     }
 
     /**
-     * Method: getUnitQuantity
-     * Purpose: Validates and updates the inventory quantity.
-     * Arguments: none.
-     * Returns: int.
+     * Returns the stored quantity in stock.
+     * @return current quantity in stock
      */
     public int getUnitQuantity() {
 
         return unitQuantity;
+
     }
 
     /**
-     * Method: getUnitPrice
-     * Purpose: Validates and updates the unit price.
-     * Arguments: none.
-     * Returns: BigDecimal.
+     * Returns the stored unit price.
+     * @return current unit price
      */
     public BigDecimal getUnitPrice() {
 
         return unitPrice;
+
     }
+
 }

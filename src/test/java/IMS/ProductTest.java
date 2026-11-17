@@ -1,30 +1,32 @@
+package IMS;
 /**
- * Kelly Wilburn
+ * @author Kelly Wilburn
  * CEN 3024 - Software Development 1
- * November 9, 2026
- * Class: ProductTest
- * Purpose: Tests product creation, field storage, setter validation,
- * and rejection of invalid product data.
+ * @since November 16, 2026
+ * Tests the {@link Product} model used by the Inventory Management System.
+ * Uses JUnit 5 to verify constructor initialization, field updates, and
+ * validation of product identifiers, names, quantities, and prices.
+ * These tests exercise the rules enforced by the Product model and its
+ * validation dependencies without connecting to a database.
  */
 import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.*;
-
 class ProductTest {
     // =========================================================
     // Test 1: Create Data
     // =========================================================
     /**
-     * Method: testCreateValidProduct
-     * Purpose: Verifies that a product stores all valid constructor values.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that constructing a valid {@link Product} preserves its
+     * identifier, name, category, supplier, quantity, and monetary price.
      */
     @Test
     void testCreateValidProduct() {
         Product product = new Product("1234567", "Laptop", "Electronics",
                 "Dell", 2, new BigDecimal("799.99"));
-        assertAll("Product fields",
+
+        assertAll("IMS.Product fields",
+
                 () -> assertEquals("1234567", product.getProductId()),
                 () -> assertEquals("Laptop", product.getProductName()),
                 () -> assertEquals("Electronics", product.getCategory()),
@@ -34,10 +36,9 @@ class ProductTest {
     }
 
     /**
-     * Method: testInvalidProductCannotBeCreated
-     * Purpose: Verifies that the constructor rejects invalid IDs and negative values.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that the {@link Product} constructor rejects malformed product
+     * identifiers, negative quantities, and negative prices by throwing
+     * {@link IllegalArgumentException}.
      */
     @Test
     void testInvalidProductCannotBeCreated() {
@@ -57,10 +58,8 @@ class ProductTest {
     // Test 2: Update Data
     // =========================================================
     /**
-     * Method: testUpdateProductFields
-     * Purpose: Verifies that valid setter changes are saved to the product.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that valid setter calls update a product's name, category,
+     * supplier, quantity, and price, including a quantity of zero.
      */
     @Test
     void testUpdateProductFields() {
@@ -80,10 +79,9 @@ class ProductTest {
     }
 
     /**
-     * Method: testInvalidSetterValuesAreRejected
-     * Purpose: Verifies that invalid updates throw exceptions without changing stored values.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that invalid product updates throw
+     * {@link IllegalArgumentException} without overwriting the stored
+     * quantity, identifier, or name.
      */
     @Test
     void testInvalidSetterValuesAreRejected() {

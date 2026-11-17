@@ -1,10 +1,13 @@
+package IMS;
 /**
- * Kelly Wilburn
+ * @author Kelly Wilburn
  * CEN 3024 - Software Development 1
- * November 9, 2026
- * Class: ProductValidatorTest
- * Purpose: Tests valid and invalid inventory input, including identifiers,
- * text, categories, suppliers, quantities, and prices.
+ * @since November 16, 2026
+ * Tests the {@link ProductValidator} rules used to validate inventory data.
+ * Uses JUnit 5 to check identifiers, required text, categories, suppliers,
+ * quantities, and prices, including normalization and rejected values.
+ * This suite verifies the validation behavior relied upon by product entry
+ * and updates in the Inventory Management System.
  */
 import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
@@ -14,17 +17,18 @@ class ProductValidatorTest {
     private final ProductValidator validator = new ProductValidator();
 
     // =========================================================
-    // Test 1: Product ID Validation
+    // Test 1: IMS.Product ID Validation
     // =========================================================
     /**
-     * Method: testProductIdValidation
-     * Purpose: Accepts exactly seven digits and rejects other formats.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that a product identifier must contain exactly seven digits,
+     * including identifiers with leading zeroes, and that invalid identifiers
+     * are rejected by both checking and validating methods.
      */
     @Test
     void testProductIdValidation() {
-        assertAll("Product ID validation",
+
+        assertAll("IMS.Product ID validation",
+
                 () -> assertTrue(validator.isValidProductId("1234567")),
                 () -> assertTrue(validator.isValidProductId("0000001")),
                 () -> assertFalse(validator.isValidProductId("123456")),
@@ -39,27 +43,29 @@ class ProductValidatorTest {
     // Test 2: Text, Category, and Supplier Validation
     // =========================================================
     /**
-     * Method: testTextValidation
-     * Purpose: Rejects blank product names and trims valid text.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that required text cannot be null or blank, that valid text
+     * is accepted, and that validation trims surrounding whitespace.
      */
     @Test
     void testTextValidation() {
-        assertAll("Product name validation",
+
+        assertAll("IMS.Product name validation",
+
                 () -> assertFalse(validator.isValidText("  ")),
                 () -> assertFalse(validator.isValidText(null)),
                 () -> assertTrue(validator.isValidText("Laptop")),
-                () -> assertEquals("Laptop", validator.validateText(" Laptop ", "Product name")),
+
+                () -> assertEquals("Laptop", validator.validateText(" Laptop ", "IMS.Product name")),
+
                 () -> assertThrows(IllegalArgumentException.class,
-                        () -> validator.validateText("", "Product name")));
+
+                        () -> validator.validateText("", "IMS.Product name")));
+
     }
 
     /**
-     * Method: testCategoryAndSupplierValidation
-     * Purpose: Requires at least one letter in category and supplier fields.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that category and supplier values contain at least one letter,
+     * that valid entries are trimmed, and that invalid entries are rejected.
      */
     @Test
     void testCategoryAndSupplierValidation() {
@@ -81,11 +87,10 @@ class ProductValidatorTest {
     // Test 3: Quantity and Price Validation
     // =========================================================
     /**
-     * Method: testQuantityValidation
-     * Purpose: Accepts zero and positive quantities but rejects negative values.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that zero and positive integer quantities are valid and that
+     * a negative quantity is rejected with {@link IllegalArgumentException}.
      */
+
     @Test
     void testQuantityValidation() {
         assertAll("Quantity validation",
@@ -98,10 +103,8 @@ class ProductValidatorTest {
     }
 
     /**
-     * Method: testPriceValidation
-     * Purpose: Accepts non-negative prices and rejects negative or missing prices.
-     * Parameters: none.
-     * Return: void.
+     * Verifies that zero and positive {@link java.math.BigDecimal} prices are
+     * valid, while negative or null prices are rejected.
      */
     @Test
     void testPriceValidation() {
